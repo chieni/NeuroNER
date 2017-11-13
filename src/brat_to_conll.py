@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
+import spacy
 import glob
 import codecs
-import spacy
 import utils_nlp
 import json
 from pycorenlp import StanfordCoreNLP
