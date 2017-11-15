@@ -6,8 +6,8 @@ CUDA_VISIBLE_DEVICES=2 python3.5 main.py &
 CUDA_VISIBLE_DEVICES=3 python3.5 main.py &
 '''
 from __future__ import print_function
-import tensorflow as tf
-import spacy
+# import tensorflow as tf
+# import spacy
 import os
 import argparse
 from argparse import RawTextHelpFormatter
