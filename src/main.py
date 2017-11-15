@@ -13,7 +13,7 @@ import argparse
 from argparse import RawTextHelpFormatter
 import sys
 from neuroner import NeuroNER
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import warnings
 warnings.filterwarnings('ignore')
 
