@@ -3,6 +3,8 @@ import pandas as pd
 import os
 import spacy
 import difflib
+import numpy as np
+
 
 def get_start_and_end_offset_of_token_from_spacy(token):
 	start = token.idx
@@ -131,14 +133,88 @@ def split_data_sets(filepath):
 			with open(outfilepath + filename + '.ann', 'w') as b:
 				b.writelines(ann_lines)
 
+# One-offs
+def find_file_differences(dir1, dir2):
+	file_list = os.listdir(dir1)
+	rows_list = os.listdir(dir2)
+	for file in file_list:
+		print file
+		df = pd.read_csv(dir1 + file, header=0)
+		df2 = pd.read_csv(dir2 + file, header=0)
+		list1 = set(df['HADM_ID'].values)
+		list2 = set(df2['HADM_ID'].values)
+		print list1-list2
 
-labels = {"Patient and Family Care Preferences": 'CAR',
+def clean_phrase(phrase):
+	if type(phrase) == float:
+		return phrase
+	cleaned = str(phrase.replace('\r\r', '\n').replace('\r', ''))
+	cleaned = re.sub(r'\n+', '\n', cleaned)
+	cleaned = re.sub(r' +', ' ', cleaned)
+	cleaned = re.sub(r'\t', ' ', cleaned)
+	return str(cleaned.strip())
+
+def clean_file(file, output_file, text_columns):
+	df = pd.read_csv(file,  header=0, index_col=0)
+	for label in text_columns:
+		if label in df:
+			df[label] = df[label].map(lambda x: clean_phrase(x))
+	new_df = pd.DataFrame(columns=df.columns)
+	for index, row in df.iterrows():
+		new_df = new_df.append(row)
+	new_df.to_csv(output_file)
+
+# Cleans csv files with text fields (specify text fiels in text_columns)
+def clean_all(input_dir, output_dir, text_columns = []):
+	file_list = os.listdir(input_dir)
+	for file in file_list:
+		print file
+		clean_file(input_dir + file, output_dir + file, text_columns)
+			
+def add_row_ids(input_dir, results_dir, output_dir):
+	file_list = os.listdir(results_dir)
+	for file in file_list:
+		original_df = pd.read_csv(input_dir + file[:-11] + ".csv",  header=0)
+		results_df = pd.read_csv(results_dir + file, index_col=0, header=0)
+		if 'ROW_ID' not in original_df or 'ROW_ID' in results_df:
+			continue
+		print file
+		row_array = np.empty(results_df.shape[0])
+		row_array.fill(np.nan)
+		results_df.insert(0, 'ROW_ID', row_array)
+		
+		for index, row in results_df.iterrows():
+			match_df = original_df[original_df['TEXT'] == row['TEXT']]
+			if match_df.shape[0] > 1:
+				print 'over', index
+			elif match_df.shape[0] == 0:
+				print index
+			else:
+				results_df.at[index, 'ROW_ID'] = str(int(match_df['ROW_ID'].values[0]))
+		
+		results_df['ROW_ID'] = results_df['ROW_ID'].astype('category')
+		#results_df.to_csv(output_dir + file)
+		
+
+labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Communication with Family":'FAM',
 "Full Code Status": 'COD',
 "Code Status Limitations": 'LIM',
 "Palliative Care Team Involvement": 'PAL'}
 
+text_columns = ["TEXT", "Patient and Family Care Preferences Text",
+"Communication with Family Text",
+"Full Code Status Text",
+"Code Status Limitations Text",
+"Palliative Care Team Involvement Text",
+"Ambiguous Text",
+"Ambiguous Comments"]
+
 outpath = '../data/goals_of_care/'
 directory = '/Users/IsabelChien/Dropbox (MIT)/Goals_of_Care_Notes/'
 #convert_to_brat(directory, labels, outpath)
 #split_data_sets(outpath)
+#clean_all(directory + "Annotated Notes/", directory + "neuroner/Cleaned_Annotations/", text_columns)
+#add_row_ids(directory + "Unannotated Notes/", directory + "neuroner/Cleaned_Annotations/", directory + "neuroner/Cleaned_Annotations/")
+
+
