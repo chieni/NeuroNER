@@ -4,7 +4,13 @@ import os
 import spacy
 import difflib
 import numpy as np
+import csv
 
+
+_nsre = re.compile('([0-9]+)')
+def natural_sort_key(s):
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(_nsre, s)]   
 
 def get_start_and_end_offset_of_token_from_spacy(token):
 	start = token.idx
@@ -34,8 +40,8 @@ def get_sentences_and_tokens_from_spacy(text, spacy_nlp):
 	return sentences
 
 def _create_annotation_output(count, tokens, labelname, start_pos):
-	to_write_list = []
 	new_count = int(count)
+	to_write_list = []
 	for token in tokens:
 		content = token['text']
 		if not content.isalnum():
@@ -46,64 +52,59 @@ def _create_annotation_output(count, tokens, labelname, start_pos):
 		new_count += 1
 	return to_write_list, new_count
 
-def _convert_note_to_brat_format(note_count, note, cleaned_note, label_rows, labels, spacy_nlp):
+def find_all_substrings(string, substring):
+	last_found = -1
+	output = []
+	while True:
+		last_found = string.find(substring, last_found + 1)
+		if last_found == -1:
+			return output
+		output.append(last_found)
+
+def _convert_note_to_brat_format(note, label_rows, labels, spacy_nlp):
 	# Get start and end indices for each kind of label
-	count = 1
 	write_list = []
+	count = 1
 	for label_id, label_row in label_rows.iterrows():
-		label_note = label_row['TEXT'].replace('\r\r', '\n').replace('\r', '')
-		if note != label_note:
-			continue
 		for label, labelname in labels.items():
 			if label in label_row:
 				if label_row[label] == 1:
-					# Get label
-					start = int(label_row[label + ":start"])
-					end = int(label_row[label + ":end"])
-					phrase = cleaned_note[start:end]
-					assert phrase == " ".join(label_row[label + " Text"].split())
-					# Break into tokens (words), clean out punctuation, get start:end
-					sentences = get_sentences_and_tokens_from_spacy(phrase, spacy_nlp)
+					portion = label_row[label + " Text"]
+					found_starts = find_all_substrings(note, portion)
+					sentences = get_sentences_and_tokens_from_spacy(portion, spacy_nlp)
 					tokens = [item for sentence in sentences for item in sentence]
-					to_write_list, count = _create_annotation_output(count, tokens, labelname, start)
-					write_list += to_write_list
+					for start in found_starts:
+						to_write_list, count = _create_annotation_output(count, tokens, labelname, start)
+						write_list += to_write_list
 	return write_list
 
-def convert_to_brat(filepath, labels, outpath):
+def convert_to_brat(notes_file, annotations_file, labels, outpath):
 	spacy_nlp = spacy.load('en') 
 	if not os.path.exists(outpath):
 		os.mkdir(outpath)
-	annotated_file_list = os.listdir(filepath + 'Annotated Notes')
-	note_count = 1
-	set_of_ids = set()
-	for file in annotated_file_list:
-		notes_filename = filepath + 'Unannotated Notes/' + file[:-11] + '.csv'
-		label_df = pd.read_csv(filepath + 'Annotated Notes/' + file, index_col=2, header=0)
-		notes_df = pd.read_csv(notes_filename, index_col=1, header=0)
 
-		# Possible labels
-		for hadm_id, row in notes_df.iterrows():
-			# Get text
-			note = row['TEXT'].replace('\r','')
-			cleaned_note = " ".join(note.split())
+	notes_df = pd.read_csv(notes_file, index_col=0, header=0)
+	ann_df = pd.read_csv(annotations_file, index_col=0, header=0)
 
-			# Get annotated rows
-			label_rows = label_df.loc[hadm_id]
-			if len(label_rows.shape) == 1:
-				label_rows = label_rows.to_frame().transpose()
-			
-			write_list = _convert_note_to_brat_format(note_count, note, cleaned_note, label_rows, labels, spacy_nlp)
-			num = format(note_count, '05d')
-			note_count += 1
+	# Possible labels
+	for index, row in notes_df.iterrows():
+		print(index)
+		note = row['TEXT']
+		row_id = row['ROW_ID']
+		ann_rows = ann_df[ann_df['ROW_ID'] == row_id]
+		if len(ann_rows.shape) == 1:
+			ann_rows = ann_rows.to_frame().transpose()
+		write_list = _convert_note_to_brat_format(note, ann_rows, labels, spacy_nlp)
+		num = format(index, '05d')
 
-			#Write to file
-			note_file = open(outpath + 'text_' + str(num) + '.txt', 'w')
-			note_file.write(cleaned_note)
-			note_file.close()
+		#Write to file
+		note_file = open(outpath + 'text_' + str(num) + '.txt', 'w')
+		note_file.write(note)
+		note_file.close()
 
-			anno_file = open(outpath + 'text_' + str(num) + '.ann', 'w')
-			anno_file.writelines(write_list)
-			anno_file.close()
+		anno_file = open(outpath + 'text_' + str(num) + '.ann', 'w')
+		anno_file.writelines(write_list)
+		anno_file.close()
 
 
 def split_data_sets(filepath):
@@ -133,68 +134,6 @@ def split_data_sets(filepath):
 			with open(outfilepath + filename + '.ann', 'w') as b:
 				b.writelines(ann_lines)
 
-# One-offs
-def find_file_differences(dir1, dir2):
-	file_list = os.listdir(dir1)
-	rows_list = os.listdir(dir2)
-	for file in file_list:
-		print file
-		df = pd.read_csv(dir1 + file, header=0)
-		df2 = pd.read_csv(dir2 + file, header=0)
-		list1 = set(df['HADM_ID'].values)
-		list2 = set(df2['HADM_ID'].values)
-		print list1-list2
-
-def clean_phrase(phrase):
-	if type(phrase) == float:
-		return phrase
-	cleaned = str(phrase.replace('\r\r', '\n').replace('\r', ''))
-	cleaned = re.sub(r'\n+', '\n', cleaned)
-	cleaned = re.sub(r' +', ' ', cleaned)
-	cleaned = re.sub(r'\t', ' ', cleaned)
-	return str(cleaned.strip())
-
-def clean_file(file, output_file, text_columns):
-	df = pd.read_csv(file,  header=0, index_col=0)
-	for label in text_columns:
-		if label in df:
-			df[label] = df[label].map(lambda x: clean_phrase(x))
-	new_df = pd.DataFrame(columns=df.columns)
-	for index, row in df.iterrows():
-		new_df = new_df.append(row)
-	new_df.to_csv(output_file)
-
-# Cleans csv files with text fields (specify text fiels in text_columns)
-def clean_all(input_dir, output_dir, text_columns = []):
-	file_list = os.listdir(input_dir)
-	for file in file_list:
-		print file
-		clean_file(input_dir + file, output_dir + file, text_columns)
-			
-def add_row_ids(input_dir, results_dir, output_dir):
-	file_list = os.listdir(results_dir)
-	for file in file_list:
-		original_df = pd.read_csv(input_dir + file[:-11] + ".csv",  header=0)
-		results_df = pd.read_csv(results_dir + file, index_col=0, header=0)
-		if 'ROW_ID' not in original_df or 'ROW_ID' in results_df:
-			continue
-		print file
-		row_array = np.empty(results_df.shape[0])
-		row_array.fill(np.nan)
-		results_df.insert(0, 'ROW_ID', row_array)
-		
-		for index, row in results_df.iterrows():
-			match_df = original_df[original_df['TEXT'] == row['TEXT']]
-			if match_df.shape[0] > 1:
-				print 'over', index
-			elif match_df.shape[0] == 0:
-				print index
-			else:
-				results_df.at[index, 'ROW_ID'] = str(int(match_df['ROW_ID'].values[0]))
-		
-		results_df['ROW_ID'] = results_df['ROW_ID'].astype('category')
-		#results_df.to_csv(output_dir + file)
-		
 
 labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Communication with Family":'FAM',
@@ -202,19 +141,8 @@ labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Code Status Limitations": 'LIM',
 "Palliative Care Team Involvement": 'PAL'}
 
-text_columns = ["TEXT", "Patient and Family Care Preferences Text",
-"Communication with Family Text",
-"Full Code Status Text",
-"Code Status Limitations Text",
-"Palliative Care Team Involvement Text",
-"Ambiguous Text",
-"Ambiguous Comments"]
-
-outpath = '../data/goals_of_care/'
 directory = '/Users/IsabelChien/Dropbox (MIT)/Goals_of_Care_Notes/'
-#convert_to_brat(directory, labels, outpath)
-#split_data_sets(outpath)
-#clean_all(directory + "Annotated Notes/", directory + "neuroner/Cleaned_Annotations/", text_columns)
-#add_row_ids(directory + "Unannotated Notes/", directory + "neuroner/Cleaned_Annotations/", directory + "neuroner/Cleaned_Annotations/")
-
+outpath = '../data/goals_of_care/'
+#convert_to_brat(directory + 'neuroner/all_notes_112017.csv', directory + "neuroner/all_annotations_112017.csv", labels_dict, outpath + "output/")
+split_data_sets(outpath)
 
