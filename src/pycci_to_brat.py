@@ -7,11 +7,6 @@ import numpy as np
 import csv
 
 
-_nsre = re.compile('([0-9]+)')
-def natural_sort_key(s):
-    return [int(text) if text.isdigit() else text.lower()
-            for text in re.split(_nsre, s)]   
-
 def get_start_and_end_offset_of_token_from_spacy(token):
 	start = token.idx
 	end = start + len(token)
@@ -79,6 +74,7 @@ def _convert_note_to_brat_format(note, label_rows, labels, spacy_nlp):
 	return write_list
 
 def convert_to_brat(notes_file, annotations_file, labels, outpath):
+	outpath = outpath + "output/"
 	spacy_nlp = spacy.load('en') 
 	if not os.path.exists(outpath):
 		os.mkdir(outpath)
@@ -107,16 +103,15 @@ def convert_to_brat(notes_file, annotations_file, labels, outpath):
 		anno_file.close()
 
 
-def split_data_sets(filepath):
+def split_data_sets(filepath, training_ratio=0.7):
 	input_filepath = filepath + 'output/'
 	file_list = os.listdir(input_filepath)
-	training_ratio = 0.7
-	breakpoint = (len(file_list)/2)*0.7
+	breakpoint = (len(file_list)/2)*training_ratio
 
 	if not os.path.exists(filepath + 'train'):
-		os.mkdir(outpath + 'train')
+		os.mkdir(filepath + 'train')
 	if not os.path.exists(filepath + 'valid'):
-		os.mkdir(outpath + 'valid')
+		os.mkdir(filepath + 'valid')
 
 	for i in range(0,len(file_list),2):
 		filename = file_list[i].split('.')[0]
@@ -141,8 +136,7 @@ labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Code Status Limitations": 'LIM',
 "Palliative Care Team Involvement": 'PAL'}
 
-directory = '/Users/IsabelChien/Dropbox (MIT)/Goals_of_Care_Notes/'
-outpath = '../data/goals_of_care/'
-#convert_to_brat(directory + 'neuroner/all_notes_112017.csv', directory + "neuroner/all_annotations_112017.csv", labels_dict, outpath + "output/")
-split_data_sets(outpath)
+directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
+#convert_to_brat(directory + 'raw_data/all_notes/all_notes_112217.csv', directory + "raw_data/all_annotations/all_annotations_112217.csv", labels_dict, directory + "brat/112217/")
+split_data_sets(directory + 'brat/112217/')
 
