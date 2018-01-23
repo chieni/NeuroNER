@@ -346,4 +346,7 @@ directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
 
 #dataframe_to_brat('../temp/gold_data/all_notes_122017.csv', '../temp/gold_data/final_by_class_011718.csv', '../temp/011918/learning_curve/', labels)
 #unannotated_dataframe_to_brat('../temp/011918/over_75_cohort_17Jan18.csv', '../temp/011918/over_75/')
-split_data_sets_for_learning_curve('../temp/011918/full_brat/', '../temp/011918/learning_curve/', labels)
+#split_data_sets_for_learning_curve('../temp/011918/full_brat/', '../temp/011918/learning_curve/', labels)
+split_data_sets_for_learning_curve('../data/full_brat/', '../data/learning_curve/', labels)
+
+
