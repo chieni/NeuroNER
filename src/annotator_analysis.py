@@ -34,8 +34,12 @@ def parse_ann_column(row, op):
 		total = list(set(ast.literal_eval(val)+ast.literal_eval(val2)))
 		return total
 
-def calc_kappa_for_pairs(annotator_dict, annotations_file, labels, out_filename):
+def calc_kappa_for_pairs(raw_annotations_file, annotations_file, labels, out_filename):
+	raw_df = pd.read_csv(raw_annotations_file, index_col=0, header=0)
 	ann_df = pd.read_csv(annotations_file, index_col=0, header=0, dtype=object)
+	annotators = raw_df['operator'].unique().tolist()
+	annotator_dict = get_notes_by_annotator(raw_df, annotators)
+
 	op_combinations = list(itertools.combinations(annotator_dict.keys(), 2))
 	results_list = []
 	results_headers = ['op1', 'op2', 'num_overlap', 'label', 'kappa', 'op1_count', 'op2_count']
@@ -88,14 +92,15 @@ def get_annotator_headers(annotators):
 def shorten_raw_annotations(annotators, annotations_file, out_filename):
 	subset = get_annotator_headers(annotators)
 	ann_df = pd.read_csv(annotations_file, index_col=0, header=0, dtype=object)
-	ann_df = ann_df[~(ann_df['Harry'].isin([np.nan, 'O']) & ann_df['Saad'].isin([np.nan, 'O']) & ann_df['Sarah'].isin([np.nan, 'O'])& ann_df['Dickson'].isin([np.nan, 'O'])& ann_df['Harry_2'].isin([np.nan, 'O'])& ann_df['Sarah_2'].isin([np.nan, 'O'])& ann_df['Saad_2'].isin([np.nan, 'O'])& ann_df['Dickson_2'].isin([np.nan, 'O']))]
+	mask = (ann_df[subset].isin(['O']) | ann_df[subset].isnull()).all(axis=1)
+	ann_df = ann_df[~mask]
 	ann_df.to_csv(out_filename)
 
-def get_unannotated_notes(raw_annotations_file, notes_file, out_filename, text_columns, keep_columns):
+def get_unreviewed_notes(raw_annotations_file, notes_file, out_filename, text_columns, keep_columns):
 	ann_df = clean_df(pd.read_csv(raw_annotations_file, index_col=0, header=0), text_columns)
 	notes_df = pd.read_csv(notes_file, header=0, index_col=0)
 	annotators = ann_df['operator'].unique().tolist()
-	ann_dict = get_notes_by_annotator(raw_annotations_file, ann_df, annotators)
+	ann_dict = get_notes_by_annotator(ann_df, annotators)
 	# Invert dictionary
 	reversed_dict = defaultdict(list)
 	for ann,row_ids in ann_dict.items():
@@ -110,13 +115,47 @@ def get_unannotated_notes(raw_annotations_file, notes_file, out_filename, text_c
 	save_df = save_df[keep_columns]
 	save_df.to_csv(out_filename)
 
-def get_notes_by_annotator(raw_annotations_file, annotations_df, annotators):
+def get_notes_by_annotator(annotations_df, annotators):
 	results_dict = {}
 	for annotator in annotators:
 		op_df = annotations_df[annotations_df['operator'] == annotator]
-		row_ids = list(map(int, op_df['ROW_ID'].unique()))
+		row_ids = list(map(int, map(float, op_df['ROW_ID'].unique())))
 		results_dict[annotator] = row_ids
 	return results_dict
+
+def _get_annotator_headers(annotators):
+	header = annotators[:]
+	for ann in header:
+		header.append(ann + '_2')
+	return header
+
+def get_note_level_data(raw_annotations_file, labels_dict, out_filename):
+	raw_df = pd.read_csv(raw_annotations_file, index_col=0, header=0)
+	notes = map(int, raw_df['ROW_ID'].unique().tolist())
+	results_list = []
+	results_headers = ['ROW_ID', 'TEXT', 'LIM', 'COD', 'FAM', 'PAL', 'CAR', 'AMB']
+	
+	for note in notes:
+		print(note)
+		note_df = raw_df[raw_df['ROW_ID'] == note]
+		# Get presence of each label
+		note_dict = {value: (1 if 1 in note_df[key].unique().tolist() else 0) for key, value in labels_dict.items()}
+		note_dict['ROW_ID'] = note
+		note_dict['TEXT'] = note_df['TEXT'].unique().tolist()[0]
+		results_list.append(note_dict)
+
+	results_df = pd.DataFrame(results_list)
+	results_df = results_df[results_headers]
+	results_df.to_csv(out_filename)
+
+def get_notes_for_alex(note_labels_filename, notes_file, out_filename):
+	label_df = pd.read_csv(note_labels_filename, header=0, index_col=0)
+	notes_df = pd.read_csv(notes_file, header=0, index_col=0)
+	label_df = label_df[~((label_df['LIM'] == 1) | (label_df['CAR'] == 1))]
+	note_list = label_df['ROW_ID'].unique().tolist()
+	save_df = notes_df[notes_df['ROW_ID'].isin(note_list)]
+	save_df = save_df[['HADM_ID', 'ROW_ID', 'CHARTDATE', 'CATEGORY', 'DESCRIPTION', 'TEXT']]
+	save_df.to_csv(out_filename)
 
 text_columns = ["TEXT", "Patient and Family Care Preferences Text",
 "Communication with Family Text",
@@ -126,20 +165,27 @@ text_columns = ["TEXT", "Patient and Family Care Preferences Text",
 "Ambiguous Text",
 "Ambiguous Comments"]
 
-directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
-raw_annotations_file = directory + "raw_data/all_annotations/op_annotations_122017.csv"
-annotations_file = directory + "csv/annotations_122117_v3.csv"
-shortened_annotations_file = directory + "csv/short_annotations_122117_v3.csv"
-out_filename = directory + "csv/ann_metrics_122117.csv"
-unannotated_filename = directory + 'batches/single_notes.csv'
-notes_file = directory + 'raw_data/all_notes/all_notes_122017.csv'
+labels_dict = {"Patient and Family Care Preferences": 'CAR',
+"Communication with Family":'FAM',
+"Full Code Status": 'COD',
+"Code Status Limitations": 'LIM',
+"Palliative Care Team Involvement": 'PAL',
+"Ambiguous": 'AMB'}
 
-annotators = ['Saad', 'Sarah', 'Dickson', 'Harry']
+directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
+raw_annotations_file = "../temp/op_annotations_122817.csv"
+annotations_file = "../temp/token_annotations_122817.csv"
+shortened_annotations_file = '../temp/short_annotations_122717.csv'
+out_filename = '../temp/ann_metrics_122817.csv'
+unannotated_filename = directory + 'batches/single_notes.csv'
+notes_file = '../temp/all_notes_122017.csv'
+
 labels = ['COD', 'LIM', 'CAR', 'FAM', 'PAL', 'AMB']
+annotators = ['Saad', 'Sarah', 'Harry', 'Dickson']
 keep_columns = ['HADM_ID', 'ROW_ID', 'CHARTDATE', 'CATEGORY', 'DESCRIPTION', 'TEXT', 'operator']
 
-get_unannotated_notes(raw_annotations_file, notes_file, unannotated_filename, text_columns, keep_columns)
-# with open('../obj/ann.pkl', 'rb') as f:
-# 	annotator_dict = pickle.load(f)
-# 	calc_kappa_for_pairs(annotator_dict, annotations_file, labels, out_filename)
+#get_note_level_data(raw_annotations_file, labels_dict, '../temp/note_labels_122817.csv')
+#get_notes_for_alex('../temp/note_labels_122817.csv', notes_file, '../temp/no_lim_car_notes_v2.csv')
+#calc_kappa_for_pairs(raw_annotations_file, annotations_file, labels, out_filename)
 #shorten_raw_annotations(annotators, annotations_file, shortened_annotations_file)
+#get_unreviewed_notes(raw_annotations_file, notes_file, out_filename, text_columns, keep_columns)

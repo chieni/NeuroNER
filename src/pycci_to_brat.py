@@ -6,6 +6,8 @@ import difflib
 import numpy as np
 import csv
 import pickle
+import ast
+import random
 from pycci_preprocessing import clean_df
 
 
@@ -36,19 +38,6 @@ def get_sentences_and_tokens_from_spacy(text, spacy_nlp):
 		sentences.append(sentence_tokens)
 	return sentences
 
-def _create_annotation_output(count, tokens, labelname, start_pos):
-	new_count = int(count)
-	to_write_list = []
-	for token in tokens:
-		content = token['text']
-		if not content.isalnum():
-			if not '\'' in content:
-				continue
-		to_write_list.append(
-			'T{0}\t{1} {2} {3}\t{4}\n'.format(new_count, labelname, start_pos + token['start'], start_pos + token['end'], content))
-		new_count += 1
-	return to_write_list, new_count
-
 def find_all_substrings(string, substring):
 	last_found = -1
 	output = []
@@ -58,97 +47,6 @@ def find_all_substrings(string, substring):
 			return output
 		output.append(last_found)
 
-def _convert_note_to_brat_format(note, label_rows, labels, spacy_nlp):
-	# Get start and end indices for each kind of label
-	write_list = []
-	count = 1
-	for label_id, label_row in label_rows.iterrows():
-		for label, labelname in labels.items():
-			if label in label_row:
-				if label_row[label] == 1:
-					portion = label_row[label + " Text"]
-					found_starts = find_all_substrings(note, portion)
-					sentences = get_sentences_and_tokens_from_spacy(portion, spacy_nlp)
-					tokens = [item for sentence in sentences for item in sentence]
-					for start in found_starts:
-						to_write_list, count = _create_annotation_output(count, tokens, labelname, start)
-						write_list += to_write_list
-	return write_list
-
-def convert_to_brat(notes_file, annotations_file, labels, outfile_path):
-	if not os.path.exists(outfile_path):
-		os.mkdir(outfile_path)
-	outpath = outfile_path + "output/"
-	spacy_nlp = spacy.load('en') 
-	if not os.path.exists(outpath):
-		os.mkdir(outpath)
-
-	notes_df = pd.read_csv(notes_file, index_col=0, header=0)
-	ann_df = pd.read_csv(annotations_file, index_col=0, header=0)
-
-	row_id_to_file_num = open(outfile_path + 'row_id_to_file_num.txt', 'w')
-	# Possible labels
-	token_num = 0
-	for index, row in notes_df.iterrows():
-		note = row['TEXT']
-		row_id = row['ROW_ID']
-		ann_rows = ann_df[ann_df['ROW_ID'] == row_id]
-		if len(ann_rows.shape) == 1:
-			ann_rows = ann_rows.to_frame().transpose()
-		write_list = _convert_note_to_brat_format(note, ann_rows, labels, spacy_nlp)
-		num = format(index, '05d')
-		token_num += len(write_list)
-		#Write to file
-		note_file = open(outpath + 'text_' + str(num) + '.txt', 'w')
-		note_file.write(note)
-		note_file.close()
-
-		anno_file = open(outpath + 'text_' + str(num) + '.ann', 'w')
-		anno_file.writelines(write_list)
-		anno_file.close()
-
-		row_id_to_file_num.write(str(row_id) + "\t" + 'text_' + str(num) + '\n')
-	print(token_num)
-
-def split_data_sets(filepath, outfilepath=None, training_ratio=0.7):
-	if outfilepath is None:
-		outfilepath = str(filepath)
-	input_filepath = filepath + 'output/'
-	file_list = os.listdir(input_filepath)
-	breakpoint = (len(file_list)/2)*training_ratio
-
-	if not os.path.exists(outfilepath):
-		os.mkdir(outfilepath)
-	if not os.path.exists(outfilepath + 'train'):
-		os.mkdir(outfilepath + 'train')
-	if not os.path.exists(outfilepath + 'valid'):
-		os.mkdir(outfilepath + 'valid')
-
-	is_train = True
-	train_tokens = 0
-	valid_tokens = 0
-	for i in range(0,len(file_list),2):
-		filename = file_list[i].split('.')[0]
-		if i/2 < breakpoint:
-			outpath = outfilepath + 'train/train_'
-		else:
-			is_train = False
-			outpath = outfilepath + 'valid/valid_'
-
-		with open(input_filepath + filename + '.txt') as f:
-			lines = f.readlines()
-			with open(outpath + filename + '.txt', 'w') as g:
-				g.writelines(lines)
-		with open(input_filepath + filename + '.ann') as a:
-			ann_lines = a.readlines()
-			with open(outpath + filename + '.ann', 'w') as b:
-				b.writelines(ann_lines)
-				if is_train:
-					train_tokens += len(ann_lines)
-				else:
-					valid_tokens += len(ann_lines)
-	print(train_tokens)
-	print(valid_tokens)
 
 def _create_entities(existing_ents, tokens, labelname, start_pos, operator, original_filename):
 	entities = []
@@ -205,16 +103,22 @@ def _make_default_token_dict(annotators):
 		entity_dict[ann+'_2'] = None
 	return entity_dict
 
-def convert_to_df_format(annotations_file, labels, annotators, out_file, annotator_dict):
+def convert_to_df_format(annotations_file, labels, out_file, text_columns, has_annotations=True):
 	spacy_nlp = spacy.load('en') 
-	ann_df = clean_df(pd.read_csv(annotations_file, index_col=0, header=0), text_columns)
+	ann_df = clean_df(pd.read_csv(annotations_file, header=0), text_columns)
+	if has_annotations:
+		annotators = ann_df['operator'].unique().tolist()
+		annotator_dict = get_notes_by_annotator(ann_df, annotators)
+	else:
+		annotators = []
+	print(ann_df.head())
 	row_ids = list(ann_df['ROW_ID'].unique())
 
 	df_list = []
 	count = 0
 	for index, row_id in enumerate(row_ids):
-		print(count, row_id)
 		note_name = int(row_id)
+		print(count, note_name)
 		ann_rows = ann_df[ann_df['ROW_ID'] == row_id]
 		note = ann_rows['TEXT'].values[0]
 		# Assert that all annotations pulled match this note
@@ -223,8 +127,8 @@ def convert_to_df_format(annotations_file, labels, annotators, out_file, annotat
 
 		if len(ann_rows.shape) == 1:
 			ann_rows = ann_rows.to_frame().transpose()
-
-		ann_entities = _get_annotated_entities(note, ann_rows, labels, spacy_nlp)
+		if has_annotations:
+			ann_entities = _get_annotated_entities(note, ann_rows, labels, spacy_nlp)
 
 		# Add every token to its own row in dataframe
 		sentences = get_sentences_and_tokens_from_spacy(note, spacy_nlp) 
@@ -235,29 +139,190 @@ def convert_to_df_format(annotations_file, labels, annotators, out_file, annotat
 			token_dict['note_name'] = note_name
 			token_dict['start'] = token['start']
 			token_dict['end'] = token['end']
-			for entity in ann_entities:
-				if entity['start'] == token_dict['start'] and entity['end'] == token_dict['end']:
-					operator = entity['operator']
-					label = entity['labels']
-					# If we have not seen this operator for this token before
-					if token_dict[operator] is None:
-						token_dict[operator] = label
-					else:
-						print(entity)
-						token_dict[operator + "_2"] = label
-			# If annotator annotated this, then make it 'O'
-			# In the future make the distinction between first and second annotation
-			for ann, ann_row_ids in annotator_dict.items():
-				if note_name in ann_row_ids:
-					if token_dict[ann] is None:
-						token_dict[ann] = 'O'
+			if has_annotations:
+				for entity in ann_entities:
+					if entity['start'] == token_dict['start'] and entity['end'] == token_dict['end']:
+						operator = entity['operator']
+						label = entity['labels']
+						# If we have not seen this operator for this token before
+						if token_dict[operator] is None:
+							token_dict[operator] = label
+						else:
+							token_dict[operator + "_2"] = label
+				# If annotator annotated this, then make it 'O'
+				# In the future make the distinction between first and second annotation
+				for ann, ann_row_ids in annotator_dict.items():
+					if note_name in ann_row_ids:
+						if token_dict[ann] is None:
+							token_dict[ann] = 'O'
 			df_list.append(token_dict)
 		count += 1
 	all_df = pd.DataFrame(df_list)
 	all_df = all_df.astype('object')
-	all_df = all_df[_make_df_format_headers(annotators)]
+	if has_annotations:
+		all_df = all_df[_make_df_format_headers(annotators)]
+	else:
+		all_df = all_df[['token', 'note_name', 'start', 'end']]
 	all_df.to_csv(out_file)
 
+def get_notes_by_annotator(annotations_df, annotators):
+	results_dict = {}
+	for annotator in annotators:
+		op_df = annotations_df[annotations_df['operator'] == annotator]
+		row_ids = list(map(int, op_df['ROW_ID'].unique()))
+		results_dict[annotator] = row_ids
+	return results_dict
+
+def merge_additions_reviewed(token_file, additions_file, output_file):
+	# Add column
+	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
+	addition_df = pd.read_csv(additions_file, dtype='object', header=0, index_col=0)
+	new_df = pd.merge(token_df, addition_df,  how='left', left_on=['note_name','start'], right_on = ['note_name','start'], left_index=False, right_index=False)
+	new_df = new_df.astype('object')
+	new_df.to_csv(output_file)
+
+def convert_nan_token(token):
+	if token is np.nan:
+		return 'O'
+	return token
+
+def get_gold_label(row):
+	if row['reviewer'] == 'O' and row['reviewer_added'] == 'O':
+		return 'O'
+	elif row['reviewer_added'] != 'O':
+		return row['reviewer_added']
+	elif row['reviewer'] != 'O':
+		return row['reviewer']
+	else:
+		return row['reviewer']
+
+def finalize_review_tokens(token_file, output_file):
+	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
+	token_df['reviewer'] = token_df['reviewer'].map(lambda x: convert_nan_token(x))
+	token_df['reviewer_added'] = token_df['reviewer_added'].map(lambda x: convert_nan_token(x))
+	
+	# Look at a 'reviewer' and 'reviewer_added'
+	token_df['gold'] = token_df.apply(lambda row: get_gold_label(row), axis=1)
+	token_df = token_df[['token_x', 'note_name', 'start', 'end_x', 'gold']]
+	token_df.astype('object')
+	token_df.to_csv(output_file)
+
+def get_single_token_label(row, label):
+	if row['gold'] == 'O':
+		return 'O'
+	else:
+		label_list = ast.literal_eval(row['gold'])
+		if label in label_list:
+			return label
+		return 'O'
+
+def get_cim_label(row, label):
+	if row['gold'] == 'O':
+		return 'O'
+	else:
+		label_list = ast.literal_eval(row['gold'])
+		if 'CAR' in label_list or 'LIM' in label_list:
+			return 'CIM'
+		return 'O'
+
+def split_df_by_class(token_file, token_class_file):
+	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
+	for label in labels:
+		token_df[label] = token_df.apply(lambda row: get_single_token_label(row, label), axis=1)
+	token_df['CIM'] = token_df.apply(lambda row: get_cim_label(row, label), axis=1)
+	token_df.to_csv(token_class_file)
+
+def dataframe_to_brat(notes_file, token_class_file, output_filepath, labels):
+	token_df = pd.read_csv(token_class_file, header=0, index_col=0)
+	row_ids = token_df['note_name'].unique().tolist()
+	print(token_df.shape)
+
+	notes_df = pd.read_csv(notes_file, index_col=0, header=0)
+
+	# Split by individual class
+	for label in labels:
+		label_df = token_df[['token_x', 'note_name', 'start', 'end_x', label]]
+		label_filepath = output_filepath + label + "/"
+
+		if not os.path.exists(label_filepath):
+			os.mkdir(label_filepath)
+
+		for row_id in row_ids:
+			to_write_list = []
+			row_df = label_df[(label_df['note_name'] == row_id) & (label_df[label] != 'O')]
+			count = 1
+			for idx, row in row_df.iterrows():
+				to_write_list.append(
+					'T{0}\t{1} {2} {3}\t{4}\n'.format(count, row[label], row['start'], row['end_x'], row['token_x']))
+				count += 1
+			note = notes_df[notes_df['ROW_ID'] == row_id]['TEXT'].tolist()[0]
+			note_file = open(label_filepath + 'text_' + str(row_id) + '.txt', 'w')
+			note_file.write(note)
+			note_file.close()
+
+			anno_file = open(label_filepath + 'text_' + str(row_id) + '.ann', 'w')
+			anno_file.writelines(to_write_list)
+			anno_file.close()
+
+def unannotated_dataframe_to_brat(notes_file, output_filepath):
+	notes_df = pd.read_csv(notes_file, header=0)
+	row_ids = notes_df['ROW_ID'].unique().tolist()
+	print(len(row_ids))
+	label_filepath = output_filepath + 'deploy/'
+	if not os.path.exists(label_filepath):
+		os.mkdir(label_filepath)
+	for row_id in row_ids:
+		note = notes_df[notes_df['ROW_ID'] == row_id]['TEXT'].tolist()[0]
+		note_file = open(label_filepath + 'text_' + str(row_id) + '.txt', 'w')
+		note_file.write(note)
+		note_file.close()
+
+def split_data_sets_for_learning_curve(input_filepath, out_filepath, labels, valid_ratio=0.2):
+	if not os.path.exists(out_filepath):
+		os.mkdir(out_filepath)
+
+	for label in labels:
+		print(label)
+		files = os.listdir(input_filepath + label)
+		files = [file[:11] for file in files if file[-3:] == 'txt']
+		random.shuffle(files)
+
+		valid_index = int(len(files)*valid_ratio)
+		valid_files = files[:valid_index]
+		
+		for i in range(1, 9, 1):
+			end_index = int(valid_index + i*0.1*len(files))
+			train_files = files[valid_index: end_index]
+			label_filepath = out_filepath + label + '_' + str(i) + '/'
+			train_filepath = label_filepath + 'train/'
+			valid_filepath = label_filepath + 'valid/'
+			if not os.path.exists(label_filepath):
+				os.mkdir(label_filepath)
+			if not os.path.exists(train_filepath):
+				os.mkdir(train_filepath)
+			if not os.path.exists(valid_filepath):
+				os.mkdir(valid_filepath)
+
+			for note_name in train_files:
+				note_content = open(input_filepath + label + "/" + note_name + '.txt', 'r').readlines()
+				note_file = open(train_filepath + note_name + '.txt', 'w').writelines([l for l in note_content])
+
+				ann_content = open(input_filepath + label + "/" + note_name + '.ann', 'r').readlines()
+				anno_file = open(train_filepath + note_name + '.ann', 'w').writelines([l for l in ann_content])
+
+			for note_name in valid_files:
+				note_content = open(input_filepath + label + "/" + note_name + '.txt', 'r').readlines()
+				note_file = open(valid_filepath + note_name + '.txt', 'w').writelines([l for l in note_content])
+
+				ann_content = open(input_filepath + label + "/" + note_name + '.ann', 'r').readlines()
+				anno_file = open(valid_filepath + note_name + '.ann', 'w').writelines([l for l in ann_content])
+
+
+def derp():
+	files = os.listdir('../temp/011918/learning_curve/CAR_3/train')
+	files2 = os.listdir('../temp/011918/learning_curve/CAR_3/valid')
+	print(len(files)/2)
+	print(len(files2)/2)
 
 labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Communication with Family":'FAM',
@@ -266,6 +331,7 @@ labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Palliative Care Team Involvement": 'PAL',
 "Ambiguous": 'AMB'}
 
+labels = ['CAR', 'COD', 'FAM', 'LIM', 'CIM']
 text_columns = ["TEXT", "Patient and Family Care Preferences Text",
 "Communication with Family Text",
 "Full Code Status Text",
@@ -275,27 +341,9 @@ text_columns = ["TEXT", "Patient and Family Care Preferences Text",
 "Ambiguous Comments"]
 
 directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
-annotations_file = directory + "raw_data/all_annotations/op_annotations_122017.csv"
-df_out_file = directory + "csv/annotations_122117_v3.csv"
-annotators = ['Saad', 'Sarah', 'Dickson', 'Harry']
 
-# results_dict = get_notes_by_annotator(raw_annotations_file, annotators)
-# with open('../obj/ann.pkl', 'wb') as f:
-# 	pickle.dump(results_dict, f, pickle.HIGHEST_PROTOCOL)
-# f.close()
+#finalize_review_tokens('../temp/010918/merged_010918.csv', '../temp/010918/final_merged_010918.csv')
 
-# To convert to a single label, simply change the labels_dict
-#convert_to_brat(directory + 'raw_data/all_notes/all_notes_120317.csv', directory + "raw_data/all_annotations/all_annotations_120317.csv", labels_dict, directory + "brat/120317/")
-#split_data_sets(directory + 'brat/120317/', directory + 'brat/120517_8/', 0.8)
-with open('../obj/ann.pkl', 'rb') as f:
-	annotator_dict = pickle.load(f)
-convert_to_df_format(annotations_file, labels_dict, annotators, df_out_file, annotator_dict)
-# for text, label in labels_dict.items():
-# 	new_dict = {}
-# 	new_dict[text] = label
-# 	all_notes_file = directory + 'raw_data/all_notes/all_notes_120317.csv'
-# 	all_ann_file = directory + "raw_data/all_annotations/all_annotations_120317.csv"
-# 	out_dir = directory + "brat/120317_" + label + "/"
-# 	convert_to_brat(all_notes_file, all_ann_file, new_dict, out_dir)
-# 	split_data_sets(out_dir)
-
+#dataframe_to_brat('../temp/gold_data/all_notes_122017.csv', '../temp/gold_data/final_by_class_011718.csv', '../temp/011918/learning_curve/', labels)
+#unannotated_dataframe_to_brat('../temp/011918/over_75_cohort_17Jan18.csv', '../temp/011918/over_75/')
+split_data_sets_for_learning_curve('../temp/011918/full_brat/', '../temp/011918/learning_curve/', labels)

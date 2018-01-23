@@ -69,29 +69,28 @@ def concat_all_unannotated(input_dir, output_file):
 def concat_all_annotations(results_dir, operators_file, output_file, text_columns, headers=None):
 	results_list = os.listdir(results_dir)
 	operators_df = pd.read_csv(operators_file, header=0)
-	print(operators_df)
-	# results_list.sort(key=natural_sort_key)
-	# total_df = None
-	# for file in results_list:
-	# 	if file == ".DS_Store":
-	# 		continue
-	# 	operators = operators_df[operators_df['Filename'] == file]['Annotator'].values
-	# 	operator = operators[0]
-	# 	if len(operators) < 1:
-	# 		print('No operator found for ' + file)
-	# 	else:
-	# 		print(file + ', ' + operator)
-	# 	original_df = clean_df(pd.read_csv(results_dir + file, header=0, index_col=0), text_columns)
-	# 	original_df['operator'] = [operator for i in range(original_df.shape[0])]
-	# 	original_df['original_filename'] = [file for i in range(original_df.shape[0])]
-	# 	if total_df is None:
-	# 		total_df = original_df.copy()
-	# 		if headers is None:
-	# 			headers = total_df.columns
-	# 	else:
-	# 		total_df = total_df.append(original_df)
-	# total_df = total_df[headers]
-	# total_df.to_csv(output_file)
+	results_list.sort(key=natural_sort_key)
+	total_df = None
+	for file in results_list:
+		if file == ".DS_Store":
+			continue
+		operators = operators_df[operators_df['Filename'] == file]['Annotator'].values
+		operator = operators[0]
+		if len(operators) < 1:
+			print('No operator found for ' + file)
+		else:
+			print(file + ', ' + operator)
+		original_df = clean_df(pd.read_csv(results_dir + file, header=0, index_col=0), text_columns)
+		original_df['operator'] = [operator for i in range(original_df.shape[0])]
+		original_df['original_filename'] = [file for i in range(original_df.shape[0])]
+		if total_df is None:
+			total_df = original_df.copy()
+			if headers is None:
+				headers = total_df.columns
+		else:
+			total_df = total_df.append(original_df)
+	total_df = total_df[headers]
+	total_df.to_csv(output_file)
 
 # Puts all notes that have been annotated into one file
 def concat_all_notes(notes_file, results_file, output_file):
@@ -111,6 +110,23 @@ def assert_note_and_annotations_match(notes_file, annotations_file):
 			return False
 	return True
 
+def concat_to_all_annotations(annotations_file, new_annotations_file, output_file, operator, text_columns, headers=None):
+	ann_df = clean_df(pd.read_csv(annotations_file, header=0, index_col=0), text_columns)
+	new_df = clean_df(pd.read_csv(new_annotations_file, header=0, index_col=0), text_columns)
+	new_df['operator'] = [operator for i in range(new_df.shape[0])]
+	new_df['original_filename'] = [new_annotations_file.split('/')[-1] for i in range(new_df.shape[0])]
+	total_df = ann_df.append(new_df)
+	total_df = total_df[headers]
+	print(len(total_df['ROW_ID'].unique().tolist()))
+	total_df.to_csv(output_file)
+
+def add_operator_column(annotations_file, operator, output_file, text_columns, headers):
+	ann_df = clean_df(pd.read_csv(annotations_file, header=0, index_col=0), text_columns)
+	ann_df['operator'] = [operator for i in range(ann_df.shape[0])]
+	ann_df['original_filename'] = [annotations_file.split('/')[-1] for i in range(ann_df.shape[0])]
+	ann_df = ann_df[headers]
+	print(len(ann_df['ROW_ID'].unique().tolist()))
+	ann_df.to_csv(output_file)
 
 labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Communication with Family":'FAM',
@@ -127,7 +143,7 @@ text_columns = ["TEXT", "Patient and Family Care Preferences Text",
 "Ambiguous Comments"]
 
 directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
-annotation_headers = [u'ROW_ID', u'SUBJECT_ID', u'HADM_ID', u'CATEGORY',
+annotation_headers = [u'ROW_ID', u'HADM_ID', u'CATEGORY',
        u'DESCRIPTION', u'TEXT', u'COHORT',
        u'Patient and Family Care Preferences',
        u'Patient and Family Care Preferences Text',
@@ -137,8 +153,10 @@ annotation_headers = [u'ROW_ID', u'SUBJECT_ID', u'HADM_ID', u'CATEGORY',
        u'Palliative Care Team Involvement',
        u'Palliative Care Team Involvement Text', u'Ambiguous',
        u'Ambiguous Text', u'Ambiguous Comments', u'None', u'STAMP', u'operator', u'original_filename']
+#add_operator_column('../temp/010918/token_annotations_122817_additions.csv', 'reviewer_added', '../temp/010918/op_token_annotations_122817_additions.csv', text_columns, annotation_headers)
 
-concat_all_annotations(directory + 'raw_data/cleaned_annotations/', directory + 'raw_data/operators.csv', directory + "raw_data/all_annotations/op_annotations_122617.csv", text_columns, annotation_headers)
+#concat_all_annotations(directory + 'raw_data/cleaned_annotations/', directory + 'raw_data/operators.csv', directory + "raw_data/all_annotations/op_annotations_122617.csv", text_columns, annotation_headers)
+#concat_to_all_annotations('../temp/op_annotations_122717.csv', '../temp/Dickson_EOL_NotesResults.csv', '../temp/op_annotations_122817.csv', 'Dickson', text_columns, annotation_headers)
 #concat_all_notes(directory + 'raw_data/all_notes/all_notes_cleaned.csv' , directory + "raw_data/all_annotations/all_annotations_122017.csv", directory + 'raw_data/all_notes/all_notes_122017.csv')
 #print assert_note_and_annotations_match(directory + 'raw_data/all_notes/all_notes_122017.csv', directory + "raw_data/all_annotations/all_annotations_122017.csv")
 
