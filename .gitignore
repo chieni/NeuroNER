@@ -6,3 +6,4 @@
 *.pydevproject
 output/*
 data/*
+temp/*
