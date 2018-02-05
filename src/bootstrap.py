@@ -21,6 +21,7 @@ def sample_test_data(label, data_folder):
 	files = [file[:11] for file in files if file[-3:] == 'txt']
 	print(len(files))
 	for i in range(1, 1001):
+		print(i)
 		# get random sample of files with replacement
 		test_files = resample(files)
 		assert len(test_files) == len(files)
