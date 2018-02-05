@@ -18,6 +18,7 @@ def sample_test_data(label, data_folder):
 	# Read files from original data folder
 	original_dir = '../data/' + data_folder + '/valid/'
 	files = os.listdir(original_dir)
+	files = [file[:11] for file in files if file[-3:] == 'txt']
 	print(len(files))
 	for i in range(1, 1001):
 		# get random sample of files with replacement
@@ -29,8 +30,11 @@ def sample_test_data(label, data_folder):
 		# Copy these files into test_dir
 
 		for note_name in test_files:
-			note_content = open(original_dir + note_name, 'r').readlines()
+			note_content = open(original_dir + note_name + '.txt', 'r').readlines()
 			note_file = open(test_dir + note_name + '.txt', 'w').writelines([l for l in note_content])
+
+			ann_content = open(original_dir + note_name + '.ann', 'r').readlines()
+			ann_file = open(test_dir + note_name + '.ann', 'w').writelines([l for l in ann_content])
 
 
 if __name__ == '__main__':
