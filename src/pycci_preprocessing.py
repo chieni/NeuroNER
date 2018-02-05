@@ -175,3 +175,7 @@ annotation_headers = [u'ROW_ID', u'HADM_ID', u'CATEGORY',
 # To compare annotator and annotator
 # - Convert annotations to CONLL results format
 # - Convert to dataframes 
+
+df = pd.read_csv("~/Downloads/Example_How_Notes_Look.1.30.18.csv")
+new_df = clean_df(df, ['TEXT'])
+new_df.to_csv('~/Downloads/fixed.csv')

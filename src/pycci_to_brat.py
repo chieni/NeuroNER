@@ -8,6 +8,7 @@ import csv
 import pickle
 import ast
 import random
+from itertools import chain
 from pycci_preprocessing import clean_df
 
 
@@ -196,14 +197,21 @@ def get_gold_label(row):
 	else:
 		return row['reviewer']
 
-def finalize_review_tokens(token_file, output_file):
+def _get_annotator_headers(annotators):
+	header = annotators[:]
+	for ann in annotators:
+		header.append(ann + '_2')
+	return header
+
+def finalize_review_tokens(token_file, annotators, output_file):
 	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
 	token_df['reviewer'] = token_df['reviewer'].map(lambda x: convert_nan_token(x))
 	token_df['reviewer_added'] = token_df['reviewer_added'].map(lambda x: convert_nan_token(x))
 	
 	# Look at a 'reviewer' and 'reviewer_added'
 	token_df['gold'] = token_df.apply(lambda row: get_gold_label(row), axis=1)
-	token_df = token_df[['token_x', 'note_name', 'start', 'end_x', 'gold']]
+	headers = ['token_x', 'note_name', 'start', 'end_x'] + _get_annotator_headers(annotators) + ['reviewer', 'reviewer_added', 'gold']
+	token_df = token_df[headers]
 	token_df.astype('object')
 	token_df.to_csv(output_file)
 
@@ -277,6 +285,46 @@ def unannotated_dataframe_to_brat(notes_file, output_filepath):
 		note_file.write(note)
 		note_file.close()
 
+def split_data_sets(input_filepath, out_filepath, labels, training_ratio=0.5):
+	if not os.path.exists(out_filepath):
+		os.mkdir(out_filepath)
+
+	for label in labels:
+		print(label)
+		files = os.listdir(input_filepath + label)
+		files = [file[:11] for file in files if file[-3:] == 'txt']
+		random.shuffle(files)
+		end_index = int(training_ratio*len(files))
+		train_files = files[:end_index]
+		valid_files = files[end_index:]
+
+		print(len(train_files))
+		print(len(valid_files))
+		
+		label_filepath = out_filepath + label + '/'
+		train_filepath = label_filepath + 'train/'
+		valid_filepath = label_filepath + 'valid/'
+		if not os.path.exists(label_filepath):
+			os.mkdir(label_filepath)
+		if not os.path.exists(train_filepath):
+			os.mkdir(train_filepath)
+		if not os.path.exists(valid_filepath):
+			os.mkdir(valid_filepath)
+
+		for note_name in train_files:
+			note_content = open(input_filepath + label + "/" + note_name + '.txt', 'r').readlines()
+			note_file = open(train_filepath + note_name + '.txt', 'w').writelines([l for l in note_content])
+
+			ann_content = open(input_filepath + label + "/" + note_name + '.ann', 'r').readlines()
+			anno_file = open(train_filepath + note_name + '.ann', 'w').writelines([l for l in ann_content])
+
+		for note_name in valid_files:
+			note_content = open(input_filepath + label + "/" + note_name + '.txt', 'r').readlines()
+			note_file = open(valid_filepath + note_name + '.txt', 'w').writelines([l for l in note_content])
+
+			ann_content = open(input_filepath + label + "/" + note_name + '.ann', 'r').readlines()
+			anno_file = open(valid_filepath + note_name + '.ann', 'w').writelines([l for l in ann_content])
+
 def split_data_sets_for_learning_curve(input_filepath, out_filepath, labels, valid_ratio=0.2):
 	if not os.path.exists(out_filepath):
 		os.mkdir(out_filepath)
@@ -317,12 +365,36 @@ def split_data_sets_for_learning_curve(input_filepath, out_filepath, labels, val
 				ann_content = open(input_filepath + label + "/" + note_name + '.ann', 'r').readlines()
 				anno_file = open(valid_filepath + note_name + '.ann', 'w').writelines([l for l in ann_content])
 
+def get_note_level_labels(token_annotations_file, output_file):
+	token_df = pd.read_csv(token_annotations_file, dtype='object', header=0, index_col=0)
 
-def derp():
-	files = os.listdir('../temp/011918/learning_curve/CAR_3/train')
-	files2 = os.listdir('../temp/011918/learning_curve/CAR_3/valid')
-	print(len(files)/2)
-	print(len(files2)/2)
+	results_dict = {'note_name':[],
+		'Saad':[], 'Sarah': [], 'Dickson':[], 'Harry': [],
+		'Saad_2': [], 'Sarah_2': [], 'Dickson_2': [], 'Harry_2':[],
+		'gold': []}
+	results_list = []
+	df_columns = results_dict.keys()
+	notes = token_df['note_name'].unique()
+
+	for note in notes:
+		note_dict = {key: 0 for key in df_columns}
+		note_dict['note_name'] = note
+		match_df = token_df[token_df['note_name'] == note]
+
+		for item in df_columns:
+			if item == 'note_name':
+				continue
+			vals = set(chain.from_iterable([[val] if val is 'O' or val is np.nan else ast.literal_eval(val) for val in match_df[item].unique()]))
+			if np.nan in vals:
+				note_dict[item] = np.nan
+			elif 'O' in vals and len(vals) == 1:
+				note_dict[item] = 'O'
+			else:
+				note_dict[item] = list(vals - set('O'))
+		results_list.append(note_dict)
+	results_df = pd.DataFrame(results_list)
+	results_df.to_csv(output_file)
+
 
 labels_dict = {"Patient and Family Care Preferences": 'CAR',
 "Communication with Family":'FAM',
@@ -341,12 +413,13 @@ text_columns = ["TEXT", "Patient and Family Care Preferences Text",
 "Ambiguous Comments"]
 
 directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
-
-#finalize_review_tokens('../temp/010918/merged_010918.csv', '../temp/010918/final_merged_010918.csv')
+annotators = ['Saad', 'Sarah', 'Harry', 'Dickson']
+#finalize_review_tokens('../temp/010918/raw_data/merged_010918.csv', annotators, '../temp/011918/final_merged_011918.csv')
 
 #dataframe_to_brat('../temp/gold_data/all_notes_122017.csv', '../temp/gold_data/final_by_class_011718.csv', '../temp/011918/learning_curve/', labels)
 #unannotated_dataframe_to_brat('../temp/011918/over_75_cohort_17Jan18.csv', '../temp/011918/over_75/')
 #split_data_sets_for_learning_curve('../temp/011918/full_brat/', '../temp/011918/learning_curve/', labels)
-split_data_sets_for_learning_curve('../data/full_brat/', '../data/learning_curve/', labels)
+#split_data_sets_for_learning_curve('../data/full_brat/', '../data/learning_curve/', labels)
 
-
+split_data_sets('../temp/full_brat/', '../temp/020318/', labels)
+#get_note_level_labels('../temp/gold_data/final_merged_011918.csv', '../temp/gold_data/note_labels_011918.csv')
