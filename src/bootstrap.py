@@ -22,7 +22,7 @@ def sample_test_data(label, data_folder):
 	print(len(files))
 	for i in range(1, 1001):
 		print(i)
-		# get random sample of files with replacement
+		# get random sample of files with replacementcd ..cd 
 		test_files = resample(files)
 		assert len(test_files) == len(files)
 		os.mkdir(output_dir + '/trial_' + str(i))
@@ -30,12 +30,12 @@ def sample_test_data(label, data_folder):
 		os.mkdir(test_dir)
 		# Copy these files into test_dir
 
-		for note_name in test_files:
+		for i, note_name in enumerate(test_files):
 			note_content = open(original_dir + note_name + '.txt', 'r').readlines()
-			note_file = open(test_dir + note_name + '.txt', 'w').writelines([l for l in note_content])
+			note_file = open(test_dir + note_name +  '_' + str(i) + '.txt', 'w').writelines([l for l in note_content])
 
 			ann_content = open(original_dir + note_name + '.ann', 'r').readlines()
-			ann_file = open(test_dir + note_name + '.ann', 'w').writelines([l for l in ann_content])
+			ann_file = open(test_dir + note_name +  '_' + str(i) + '.ann', 'w').writelines([l for l in ann_content])
 
 
 if __name__ == '__main__':
