@@ -2,7 +2,7 @@ from sklearn.utils import resample
 import pandas as pd
 import os
 import numpy as np
-
+import sys
 # We want to work in ../data/<label>_bootstrapping
 # - Create folder called data/<label>_bootstrapping
 # - In folder, create 1000 folders, each one called data/CAR_bootstrapping/trial_#
