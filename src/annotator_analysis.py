@@ -9,7 +9,7 @@ import pickle
 import itertools
 import ast
 from collections import Counter, defaultdict
-from sklearn.metrics import cohen_kappa_score
+from sklearn.metrics import cohen_kappa_score, confusion_matrix, precision_recall_fscore_support, classification_report
 from pycci_preprocessing import clean_df
 
 
@@ -216,7 +216,7 @@ def calc_kappa_note_level(note_labels_file, annotators, labels, out_filename):
 	ann_df = pd.read_csv(note_labels_file, index_col=0, header=0, dtype=object)
 	op_combinations = list(itertools.combinations(annotators, 2))
 	results_list = []
-	results_headers = ['op1', 'op2', 'num_overlap', 'label', 'kappa', 'op1_count', 'op2_count']
+	results_headers = ['true/y1', 'pred/y2', 'num_overlap', 'label', 'kappa', 'precision', 'recall', 'specificity', 'f1', 'op1_count', 'op2_count']
 	for op, op2 in op_combinations:
 		row_ids = ann_df.dropna(subset=[op])['note_name'].unique().tolist()
 		row_ids2 = ann_df.dropna(subset=[op2])['note_name'].unique().tolist()
@@ -226,11 +226,9 @@ def calc_kappa_note_level(note_labels_file, annotators, labels, out_filename):
 		if len(intersect_ids) == 0:
 			continue
 		num_overlap = len(intersect_ids)
-		print(op, op2, num_overlap)
 
 		# Get annotations from both operators per token
 		intersect_df = ann_df[ann_df['note_name'].isin(intersect_ids)]
-		print(intersect_df)
 		# If operator annotated twice, then take the aggregate of the annotations
 		y = intersect_df.apply(lambda row: parse_ann_column(row, op), axis=1).tolist()
 		y2 = intersect_df.apply(lambda row: parse_ann_column(row, op2), axis=1).tolist()
@@ -239,19 +237,40 @@ def calc_kappa_note_level(note_labels_file, annotators, labels, out_filename):
 
 		# Retrieve annotations by label
 		for label in labels:
-			print(label)
-			y_label = [label if label in val else 'O' for val in y]
-			y2_label = [label if label in val else 'O' for val in y2]
+			if label == 'CIM':
+				y_label = [label if 'CAR' in val or 'LIM' in val else 'O' for val in y]
+				y2_label = [label if 'CAR' in val or 'LIM' in val else 'O' for val in y2]
+			else:
+				y_label = [label if label in val else 'O' for val in y]
+				y2_label = [label if label in val else 'O' for val in y2]
 			kappa = cohen_kappa_score(y_label, y2_label)
+			report = classification_report(y_label, y2_label)
+			lines = report.split('\n')
+			report_data = []
+			for line in lines[2:-3]:
+				row = {}
+				row_data = line.split()
+				print(row_data)
+				row['class'] = row_data[0]
+				row['precision'] = float(row_data[1])
+				row['recall'] = float(row_data[2])
+				row['f1_score'] = float(row_data[3])
+				row['support'] = float(row_data[4])
+				report_data.append(row)
+			report_df = pd.DataFrame.from_dict(report_data)
+			print(report_df)
 			results_list.append({
-				'op1': op,
-				'op2': op2,
+				'true/y1': op,
+				'pred/y2': op2,
 				'num_overlap': num_overlap,
 				'label': label, 
 				'kappa': kappa,
+				'precision': report_df.iloc[0]['precision'],
+				'recall': report_df.iloc[0]['recall'],
+				'specificity':report_df.iloc[1]['recall'],
+				'f1': report_df.iloc[0]['f1_score'],
 				'op1_count': y_label.count(label),
 				'op2_count': y2_label.count(label)})
-			print(kappa)
 
 	results_df = pd.DataFrame(results_list)
 	results_df = results_df[results_headers]
@@ -280,12 +299,12 @@ out_filename = '../temp/ann_metrics_122817.csv'
 unannotated_filename = directory + 'batches/single_notes.csv'
 notes_file = '../temp/all_notes_122017.csv'
 
-labels = ['COD', 'LIM', 'CAR', 'FAM', 'PAL', 'AMB']
+labels = ['COD', 'LIM', 'CAR', 'FAM', 'CIM']
 annotators = ['gold', 'Saad', 'Sarah', 'Harry', 'Dickson']
 keep_columns = ['HADM_ID', 'ROW_ID', 'CHARTDATE', 'CATEGORY', 'DESCRIPTION', 'TEXT', 'operator']
 
 #calc_kappa('../temp/gold_data/final_merged_011918.csv', annotators, labels, '../temp/011918/kappas_011918.csv')
-calc_kappa_note_level('../temp/gold_data/note_labels_011918.csv', annotators, labels, '../temp/011918/note_kappas_011918.csv')
+calc_kappa_note_level('../temp/gold_data/annotator/note_labels_011918.csv', annotators, labels, '../temp/derp.csv')
 #get_note_level_data(raw_annotations_file, labels_dict, '../temp/note_labels_122817.csv')
 #get_notes_for_alex('../temp/note_labels_122817.csv', notes_file, '../temp/no_lim_car_notes_v2.csv')
 #calc_kappa_for_pairs(raw_annotations_file, annotations_file, labels, out_filename)

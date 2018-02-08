@@ -6,6 +6,7 @@ import difflib
 import numpy as np
 import csv
 import ast
+from sklearn.metrics import cohen_kappa_score, confusion_matrix, precision_recall_fscore_support, classification_report
 
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(filename, output_filename):
@@ -89,6 +90,41 @@ def calc_stats(input_filename, output_filename, labels):
 	results_df = results_df[results_cols]
 	results_df.to_csv(output_filename)
 
+# Using sklearn to sanity check my custom functions - it's all good!
+def calc_stats_sanity_check(input_filename, output_filename, labels):
+	df = pd.read_csv(input_filename, index_col=0, header=0)
+	results_cols = ['label','precision', 'recall', 'specificity', 'f1']
+	results_list = []
+	for label in labels:
+		machine_label = label + ':machine'
+
+		true_label = df[label].tolist()
+		pred_label = df[machine_label].tolist()
+		
+		report = classification_report(true_label, pred_label)
+		
+		lines = report.split('\n')
+		report_data = []
+		for line in lines[2:-3]:
+			row = {}
+			row_data = line.split()
+			row['class'] = row_data[0]
+			row['precision'] = float(row_data[1])
+			row['recall'] = float(row_data[2])
+			row['f1_score'] = float(row_data[3])
+			row['support'] = float(row_data[4])
+			report_data.append(row)
+		report_df = pd.DataFrame.from_dict(report_data)
+		print(report_df)
+		results_list.append({'label':label,
+				'precision': report_df.iloc[1]['precision'],
+				'recall': report_df.iloc[1]['recall'],
+				'specificity':report_df.iloc[0]['recall'],
+				'f1': report_df.iloc[1]['f1_score'],})
+	results_df = pd.DataFrame(results_list)
+	results_df = results_df[results_cols]
+	results_df.to_csv(output_filename)
+
 def merge_note_labels(note_labels_files, output_file):
 	notes_df = None
 	for file in note_labels_files:
@@ -126,9 +162,10 @@ review_file = filename_start +'.csv'
 note_level_output = output_dir + label + '_' + set_type + '_processed.csv'
 note_level_stats = filename_start +'_stats.csv'
 
-for i in range(1, 9):
-	convert_output_to_dataframe(directory + 'learning_curve/CIM' + str(i) + '_valid.txt', directory + 'learning_curve/CIM' + str(i) + '_valid.csv')
-	process_results_for_stats(directory + 'learning_curve/CIM' + str(i) + '_valid.csv', directory + 'learning_curve/CIM' + str(i) + '_valid_processed.csv', 'CIM')
-	calc_stats(directory + 'learning_curve/CIM' + str(i) + '_valid_processed.csv', directory + 'learning_curve/CIM' + str(i) + '_valid_stats.csv', ['CIM'])
+calc_statsv2('../temp/final_valid_results/note/merged_note_labels_valid.csv', '../temp/derp2.csv', ['LIM', 'COD', 'CAR', 'FAM', 'CIM'])
+
+#for i in range(1, 9):
+	#convert_output_to_dataframe(directory + 'learning_curve/CIM' + str(i) + '_valid.txt', directory + 'learning_curve/CIM' + str(i) + '_valid.csv')
+	#process_results_for_stats(directory + 'learning_curve/CIM' + str(i) + '_valid.csv', directory + 'learning_curve/CIM' + str(i) + '_valid_processed.csv', 'CIM')
 #merge_note_labels([output_dir + 'FAM_'+set_type+'_processed.csv', output_dir + 'CIM_'+set_type+'_processed.csv', output_dir + 'LIM_'+set_type+'_processed.csv', output_dir + 'CAR_'+set_type+'_processed.csv', output_dir + 'COD_'+set_type+'_processed.csv'], output_dir + 'merged_note_labels_over75.csv')
 #merge_to_raw_file(notes_file, output_dir + 'merged_note_labels_over75.csv', output_dir + 'labelled_over_75_v2.csv')
