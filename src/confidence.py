@@ -8,7 +8,7 @@ import sys
 # Aggregate data
 # Calculate confidence
 
-def calculate_confidence_interval(filename, outfile, label):
+def calculate_confidence_interval(original_dir, outfile, label):
 	trials = os.listdir(original_dir)
 	print(len(trials))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
