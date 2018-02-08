@@ -21,14 +21,14 @@ def calculate_confidence_interval(original_dir, outfile, label):
 		df = convert_output_to_dataframe(file)
 		if df.shape[0] == 0:
 			print('BAd', trial)
-	# 	note_df = get_note_level_labels(df, label)
-	# 	stats = calc_stats(note_df, label)
-	# 	results_list.append(stats)
-	# results_df = pd.DataFrame(results_list)
-	# results_df = results_df[results_cols]
+		note_df = get_note_level_labels(df, label)
+		stats = calc_stats(note_df, label)
+		results_list.append(stats)
+	results_df = pd.DataFrame(results_list)
+	results_df = results_df[results_cols]
 
-	# ci = results_df.quantile([0.025, 0.975], axis=1)
-	# ci.to_csv(outfile)
+	ci = results_df.quantile([0.025, 0.975], axis=1)
+	ci.to_csv(outfile)
 
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(file):
