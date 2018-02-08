@@ -14,13 +14,13 @@ def calculate_confidence_interval(original_dir, outfile, label):
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
 	for trial in trials:
-		#print(trial)
+		print(trial)
 		subfolders = os.listdir(original_dir + '/' + trial)
 		# Retrieve file
 		file =  '/'.join([original_dir, trial, subfolders[0], '000_test.txt'])
 		df = convert_output_to_dataframe(file)
 		if df.shape[0] == 0:
-			print(trial)
+			print('BAd', trial)
 	# 	note_df = get_note_level_labels(df, label)
 	# 	stats = calc_stats(note_df, label)
 	# 	results_list.append(stats)
