@@ -74,4 +74,4 @@ def calc_stats(note_df, label):
 	return {'label':label, 'p':tp+fn,'n':tn+fp, 'tp':tp, 'tn':tn, 'fp':fp, 'fn':fn, 'accuracy':accuracy, 'precision':precision, 'recall':recall, 'specificity': specificity, 'f1':f1}
 
 if __name__ == '__main__':
-	sample_test_data(sys.argv[1], sys.argv[2], sys.argv[3])
+	calculate_confidence_interval(sys.argv[1], sys.argv[2], sys.argv[3])
