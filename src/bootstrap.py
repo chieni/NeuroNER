@@ -14,7 +14,7 @@ def sample_test_data(label, data_folder, start, end):
 	output_dir = '../data/' + label + '_bootstrapping'
 	if not os.path.exists(output_dir):
 		os.mkdir(output_dir)
-
+	start, end = int(start), int(end)
 	# Read files from original data folder
 	original_dir = '../data/' + data_folder + '/valid/'
 	files = os.listdir(original_dir)
