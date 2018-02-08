@@ -8,7 +8,7 @@ import csv
 # Aggregate data
 # Calculate confidence
 
-def calculate_confidence_interval(original_dir, outfile, label):
+def calculate_confidence_interval(original_dir, results_outfile, outfile, label):
 	trials = os.listdir(original_dir)
 	print(len(trials))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
@@ -19,15 +19,13 @@ def calculate_confidence_interval(original_dir, outfile, label):
 		# Retrieve file
 		file =  '/'.join([original_dir, trial, subfolders[0], '000_test.txt'])
 		df = convert_output_to_dataframe(file)
-		if df.shape[0] == 0:
-			print('BAd', trial)
 		note_df = get_note_level_labels(df, label)
 		stats = calc_stats(note_df, label)
 		results_list.append(stats)
 	results_df = pd.DataFrame(results_list)
 	results_df = results_df[results_cols]
-
-	ci = results_df.quantile([0.025, 0.975], axis=1)
+	results.to_csv(results_outfile)
+	ci = results_df.quantile([0.025, 0.975], axis=0)
 	ci.to_csv(outfile)
 
 # Converts a NeuroNER output to a Pandas DataFrame
