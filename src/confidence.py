@@ -36,6 +36,17 @@ def convert_output_to_dataframe(file):
 	df['machine_ann'] = df['machine_ann'].map(lambda val: val.split('-')[1] if val!= 'O' else val)
 	return df
 
+def get_binary_label(row, label):
+	if label in row['manual_ann']:
+		row[label] = 1
+	else:
+		row[label] = 0
+	if label in row['machine_ann']:
+		row[label+ ':machine'] = 1
+	else:
+		row[label+ ':machine'] = 0
+	return row
+	
 # Get note-level labels
 def get_note_level_labels(df, label):
 	grouped = df.groupby('note_name')
