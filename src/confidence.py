@@ -46,7 +46,7 @@ def get_binary_label(row, label):
 	else:
 		row[label+ ':machine'] = 0
 	return row
-	
+
 # Get note-level labels
 def get_note_level_labels(df, label):
 	grouped = df.groupby('note_name')
@@ -55,6 +55,7 @@ def get_note_level_labels(df, label):
 	results_df['manual_ann'] = grouped['manual_ann'].apply(set)
 	results_df['note_name'] = results_df.index
 	results_df = results_df.apply(lambda row: get_binary_label(row, label), axis=1)
+	print(results_df)
 	results_df = results_df[['note_name', label, label+':machine']]
 	results_df.index = np.arange(0, results_df.shape[0])
 	return results_df
