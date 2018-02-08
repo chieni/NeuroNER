@@ -10,7 +10,7 @@ import sys
 # - Save list of folders
 
 
-def sample_test_data(label, data_folder):
+def sample_test_data(label, data_folder, start, end):
 	output_dir = '../data/' + label + '_bootstrapping'
 	if not os.path.exists(output_dir):
 		os.mkdir(output_dir)
@@ -20,7 +20,7 @@ def sample_test_data(label, data_folder):
 	files = os.listdir(original_dir)
 	files = [file[:11] for file in files if file[-3:] == 'txt']
 	print(len(files))
-	for i in range(1, 1001):
+	for i in range(start, end):
 		print(i)
 		# get random sample of files with replacementcd ..cd 
 		test_files = resample(files)
@@ -39,4 +39,4 @@ def sample_test_data(label, data_folder):
 
 
 if __name__ == '__main__':
-	sample_test_data(sys.argv[1], sys.argv[2])
+	sample_test_data(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
