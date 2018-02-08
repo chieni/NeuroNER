@@ -24,7 +24,7 @@ def calculate_confidence_interval(original_dir, results_outfile, outfile, label)
 		results_list.append(stats)
 	results_df = pd.DataFrame(results_list)
 	results_df = results_df[results_cols]
-	results.to_csv(results_outfile)
+	results_df.to_csv(results_outfile)
 	ci = results_df.quantile([0.025, 0.975], axis=0)
 	ci.to_csv(outfile)
 
@@ -55,7 +55,6 @@ def get_note_level_labels(df, label):
 	results_df['manual_ann'] = grouped['manual_ann'].apply(set)
 	results_df['note_name'] = results_df.index
 	results_df = results_df.apply(lambda row: get_binary_label(row, label), axis=1)
-	print(results_df)
 	results_df = results_df[['note_name', label, label+':machine']]
 	results_df.index = np.arange(0, results_df.shape[0])
 	return results_df
