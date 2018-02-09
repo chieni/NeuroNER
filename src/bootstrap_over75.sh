@@ -2,7 +2,7 @@
 
 # $1 filenum
 # Sample deploy
-python3.5 bootstrap_over75.py $1
+#python3.5 bootstrap_over75.py $1
 
 # Run model for LIM, CAR, FAM
 echo $1
