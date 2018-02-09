@@ -28,15 +28,12 @@ def calculate_confidence_interval(label, original_dir, results_outfile, outfile)
 	ci = results_df.quantile([0.025, 0.975], axis=0)
 	ci.to_csv(outfile)
 
-def calculate_cim_ci(label, lim_dir, car_dir, results_outfile, outfile):
-	car_trials = os.listdir(car_dir)[:1000]
-	lim_trials = os.listdir(lim_dir)[:1000]
-	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
-	results_list = []
-	for car, lim in zip(car_trials, lim_trials)
-		
-
-
+# def calculate_cim_ci(label, lim_dir, car_dir, results_outfile, outfile):
+# 	car_trials = os.listdir(car_dir)[:1000]
+# 	lim_trials = os.listdir(lim_dir)[:1000]
+# 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
+# 	results_list = []
+# 	for car, lim in zip(car_trials, lim_trials)
 
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(file):
