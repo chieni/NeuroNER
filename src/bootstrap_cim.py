@@ -11,8 +11,8 @@ import sys
 
 
 def sample_test_data_cim(car_folder, lim_folder, start, end):
-	car_output_dir = '../data/' + label + '_bootstrapping/CAR'
-	lim_output_dir = '../data/' + label + '_bootstrapping/LIM'
+	car_output_dir = '../data/CIM_bootstrapping/CAR'
+	lim_output_dir = '../data/CIM_bootstrapping/LIM'
 	if not os.path.exists(car_output_dir):
 		os.mkdir(car_output_dir)
 	if not os.path.exists(lim_output_dir):
