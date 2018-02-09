@@ -365,6 +365,7 @@ def split_data_sets_for_learning_curve(input_filepath, out_filepath, labels, val
 				ann_content = open(input_filepath + label + "/" + note_name + '.ann', 'r').readlines()
 				anno_file = open(valid_filepath + note_name + '.ann', 'w').writelines([l for l in ann_content])
 
+# Get the note level labels by annotator
 def get_note_level_labels(token_annotations_file, output_file):
 	token_df = pd.read_csv(token_annotations_file, dtype='object', header=0, index_col=0)
 

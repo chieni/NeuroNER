@@ -8,7 +8,7 @@ import csv
 # Aggregate data
 # Calculate confidence
 
-def calculate_confidence_interval(original_dir, results_outfile, outfile, label):
+def calculate_confidence_interval(label, original_dir, results_outfile, outfile):
 	trials = os.listdir(original_dir)
 	print(len(trials))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
@@ -27,6 +27,16 @@ def calculate_confidence_interval(original_dir, results_outfile, outfile, label)
 	results_df.to_csv(results_outfile)
 	ci = results_df.quantile([0.025, 0.975], axis=0)
 	ci.to_csv(outfile)
+
+def calculate_cim_ci(label, lim_dir, car_dir, results_outfile, outfile):
+	car_trials = os.listdir(car_dir)[:1000]
+	lim_trials = os.listdir(lim_dir)[:1000]
+	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
+	results_list = []
+	for car, lim in zip(car_trials, lim_trials)
+		
+
+
 
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(file):
@@ -85,4 +95,7 @@ def calc_stats(note_df, label):
 	return {'label':label, 'p':tp+fn,'n':tn+fp, 'tp':tp, 'tn':tn, 'fp':fp, 'fn':fn, 'accuracy':accuracy, 'precision':precision, 'recall':recall, 'specificity': specificity, 'f1':f1}
 
 if __name__ == '__main__':
-	calculate_confidence_interval(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+	if sys.argv[1] == 'CIM':
+		calculate_cim_ci(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+	else:
+		calculate_confidence_interval(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

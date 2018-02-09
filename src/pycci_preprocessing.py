@@ -27,24 +27,6 @@ def clean_df(df, text_columns):
 		new_df = new_df.append(row)
 	return new_df
 
-def add_row_ids_to_file(input_file, note_file, output_file, text_columns):
-	input_df = pd.read_csv(input_file,  header=0)
-	input_df = clean_df(input_df, text_columns)
-	notes_df = pd.read_csv(note_file, header=0, index_col=0)
-
-	row_array = np.empty(input_df.shape[0])
-	row_array.fill(np.nan)
-	input_df.insert(0, 'ROW_ID', row_array)
-
-	for index, row in input_df.iterrows():
-		match_df = notes_df[notes_df['TEXT'] == clean_phrase(row['TEXT'])]
-		if match_df.shape[0] != 1:
-			print(index)
-		input_df.at[index, 'ROW_ID'] = str(int(match_df['ROW_ID'].values[0]))
-	
-	input_df['ROW_ID'] = input_df['ROW_ID'].astype('category')
-	input_df.to_csv(output_file)
-
 _nsre = re.compile('([0-9]+)')
 def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower()
