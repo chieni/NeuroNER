@@ -29,7 +29,7 @@ def sample_test_data_cim(car_folder, lim_folder, start, end):
 
 	lim_files = os.listdir(lim_original_dir)
 	lim_files = [file[:11] for file in lim_files if file[-3:] == 'txt']
-	lim_set = set(lim_set)
+	lim_set = set(lim_files)
 
 	print(len(lim_set.intersection(car_set)))
 
