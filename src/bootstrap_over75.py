@@ -10,7 +10,7 @@ import sys
 # - Save list of folders
 
 
-def sample_test_data(data_folder, start, end):
+def sample_test_data(start, end):
 	output_dir = '../data/over75_bootstrapping'
 	if not os.path.exists(output_dir):
 		os.mkdir(output_dir)
@@ -39,4 +39,4 @@ def sample_test_data(data_folder, start, end):
 
 
 if __name__ == '__main__':
-	sample_test_data(sys.argv[1], sys.argv[2], sys.argv[3])
+	sample_test_data(sys.argv[1], sys.argv[2])
