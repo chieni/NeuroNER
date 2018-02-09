@@ -28,12 +28,34 @@ def calculate_confidence_interval(label, original_dir, results_outfile, outfile)
 	ci = results_df.quantile([0.025, 0.975], axis=0)
 	ci.to_csv(outfile)
 
-# def calculate_cim_ci(label, lim_dir, car_dir, results_outfile, outfile):
-# 	car_trials = os.listdir(car_dir)[:1000]
-# 	lim_trials = os.listdir(lim_dir)[:1000]
-# 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
-# 	results_list = []
-# 	for car, lim in zip(car_trials, lim_trials)
+def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
+	car_trials = os.listdir(car_dir)[:1000]
+	lim_trials = os.listdir(lim_dir)[:1000]
+	assert car_trials = lim_trials
+	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
+	results_list = []
+	for car, lim in zip(car_trials, lim_trials):
+		assert car == lim
+		car_subfolders = os.listdir(car_dir + '/' + car)
+		lim_subfolders = os.listdir(lim_dir + '/' + lim)
+		# Retrieve file
+		car_file = '/'.join([car_dir, trial, car_subfolders[0], '000_test.txt'])
+		lim_file = '/'.join([lim_dir, trial, lim_subfolders[0], '000_test.txt'])
+		car_df = convert_output_to_dataframe(car_file)
+		lim_df = convert_output_to_dataframe(lim_file)
+		car_df['lim_machine_ann'] = lim_df['machine_ann']
+		car_df['lim_manual_ann'] = lim_df['manual_ann']
+		df['note_name'] = car_df['note_name']
+		df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
+		df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
+		note_df = get_note_level_labels(df, 'CIM')
+		stats = calc_stats(note_df, 'CIM')
+		results_list.append(stats)
+	results_df = pd.DataFrame(results_list)
+	results_df = results_df[results_cols]
+	results_df.to_csv(results_outfile)
+	ci = results_df.quantile([0.025, 0.975], axis=0)
+	ci.to_csv(outfile)
 
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(file):
@@ -43,16 +65,14 @@ def convert_output_to_dataframe(file):
 	df['machine_ann'] = df['machine_ann'].map(lambda val: val.split('-')[1] if val!= 'O' else val)
 	return df
 
-def get_binary_label(row, label):
-	if label in row['manual_ann']:
-		row[label] = 1
+def get_cim_token_label(row, machine=False):
+	if machine:
+		if row['machine_ann'] == 'CAR' or row['lim_machine_ann'] == 'LIM':
+			return 'CIM'
 	else:
-		row[label] = 0
-	if label in row['machine_ann']:
-		row[label+ ':machine'] = 1
-	else:
-		row[label+ ':machine'] = 0
-	return row
+		if row['manual_ann'] == 'CAR' or row['lim_manual_ann'] == 'LIM':
+			return 'CIM'
+	return 'O'
 
 # Get note-level labels
 def get_note_level_labels(df, label):
@@ -65,6 +85,17 @@ def get_note_level_labels(df, label):
 	results_df = results_df[['note_name', label, label+':machine']]
 	results_df.index = np.arange(0, results_df.shape[0])
 	return results_df
+
+def get_binary_label(row, label):
+	if label in row['manual_ann']:
+		row[label] = 1
+	else:
+		row[label] = 0
+	if label in row['machine_ann']:
+		row[label+ ':machine'] = 1
+	else:
+		row[label+ ':machine'] = 0
+	return row
 
 def calc_stats(note_df, label):
 	machine_label = label + ':machine'
@@ -93,6 +124,6 @@ def calc_stats(note_df, label):
 
 if __name__ == '__main__':
 	if sys.argv[1] == 'CIM':
-		calculate_cim_ci(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+		calculate_cim_ci(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
 	else:
 		calculate_confidence_interval(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
