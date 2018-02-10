@@ -75,7 +75,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 def convert_output_to_dataframe(file):
 	df = pd.read_csv(file, sep=' ', quoting=csv.QUOTE_NONE, names=["token", "note_name", "start", "end", "manual_ann", "machine_ann"])
 	print(df)
-	df['note_name'] = df['note_name'].map(lambda val: val.split('_')[1])
+	df['note_name'] = df['note_name'].map(lambda val: get_note_name(val))
 	df['manual_ann'] = df['manual_ann'].map(lambda val: get_label(val))
 	df['machine_ann'] = df['machine_ann'].map(lambda val: get_label(val))
 	return df
@@ -87,6 +87,13 @@ def get_label(val):
 		else:
 			return val.split('-')[0]
 	return 'O'
+
+def get_note_name(val):
+	parts = val.split('_')
+	if len(parts) == 1:
+		return parts[0]
+	else:
+		return parts[1]
 
 def get_cim_token_label(row, machine=False):
 	print(row)
