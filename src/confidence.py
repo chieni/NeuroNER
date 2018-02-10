@@ -76,9 +76,17 @@ def convert_output_to_dataframe(file):
 	df = pd.read_csv(file, sep=' ', quoting=csv.QUOTE_NONE, names=["token", "note_name", "start", "end", "manual_ann", "machine_ann"])
 	print(df)
 	df['note_name'] = df['note_name'].map(lambda val: val.split('_')[1])
-	df['manual_ann'] = df['manual_ann'].map(lambda val: val.split('-')[1] if val!= 'O' else val)
-	df['machine_ann'] = df['machine_ann'].map(lambda val: val.split('-')[1] if val!= 'O' else val)
+	df['manual_ann'] = df['manual_ann'].map(lambda val: get_label(val))
+	df['machine_ann'] = df['machine_ann'].map(lambda val: get_label(val))
 	return df
+
+def get_label(label):
+	if val! = 'O':
+		if val is np.nan:
+			return 'O'
+		else:
+			return val.split('-')[0]
+	return 'O'
 
 def get_cim_token_label(row, machine=False):
 	print(row)
