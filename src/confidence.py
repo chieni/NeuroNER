@@ -90,7 +90,7 @@ def get_label(val):
 			return val.split('-')[0]
 	return 'O'
 
-def get_cdnote_name(val):
+def get_note_name(val):
 	parts = val.split('_')
 	if len(parts) == 1:
 		return parts[0]
