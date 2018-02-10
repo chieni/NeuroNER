@@ -68,6 +68,7 @@ def convert_output_to_dataframe(file):
 	return df
 
 def get_cim_token_label(row, machine=False):
+	print(row)
 	if machine:
 		if row['car_machine_ann'] == 'CAR' or row['lim_machine_ann'] == 'LIM':
 			return 'CIM'
