@@ -39,8 +39,8 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		car_subfolders = os.listdir(car_dir + '/' + fol)
 		lim_subfolders = os.listdir(lim_dir + '/' + fol)
 		# Retrieve file
-		car_file = '/'.join([car_dir, trial, car_subfolders[0], '000_test.txt'])
-		lim_file = '/'.join([lim_dir, trial, lim_subfolders[0], '000_test.txt'])
+		car_file = '/'.join([car_dir, fol, car_subfolders[0], '000_test.txt'])
+		lim_file = '/'.join([lim_dir, fol, lim_subfolders[0], '000_test.txt'])
 		car_df = convert_output_to_dataframe(car_file)
 		lim_df = convert_output_to_dataframe(lim_file)
 		car_df['lim_machine_ann'] = lim_df['machine_ann']
