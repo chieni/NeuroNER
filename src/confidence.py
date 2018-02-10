@@ -81,7 +81,7 @@ def convert_output_to_dataframe(file):
 	return df
 
 def get_label(label):
-	if val! = 'O':
+	if val != 'O':
 		if val is np.nan:
 			return 'O'
 		else:
