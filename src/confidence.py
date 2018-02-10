@@ -45,8 +45,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		lim_df = convert_output_to_dataframe(lim_file)
 		car_df['lim_machine_ann'] = lim_df['machine_ann']
 		car_df['lim_manual_ann'] = lim_df['manual_ann']
-		df = pd.DataFrame()
-		df.index = car_df.index
+		df = pd.DataFrame(index=car_df.index)
 		df['note_name'] = car_df['note_name']
 		df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
 		df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
