@@ -43,14 +43,14 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		lim_file = '/'.join([lim_dir, fol, lim_subfolders[0], '000_test.txt'])
 		car_df = convert_output_to_dataframe(car_file)
 		lim_df = convert_output_to_dataframe(lim_file)
+		car_df['car_machine_ann'] = car_df['machine_ann']
+		car_df['car_manual_ann'] = car_df['manual_ann']
 		car_df['lim_machine_ann'] = lim_df['machine_ann']
 		car_df['lim_manual_ann'] = lim_df['manual_ann']
-		df = pd.DataFrame(index=car_df.index)
-		df['note_name'] = car_df['note_name']
-		print(car_df)
-		df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
-		df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
-		note_df = get_note_level_labels(df, 'CIM')
+		car_df = car_df.drop(['machine_ann', 'manual_ann'], axis=1)
+		car_df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
+		car_df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
+		note_df = get_note_level_labels(car_df, 'CIM')
 		stats = calc_stats(note_df, 'CIM')
 		results_list.append(stats)
 	results_df = pd.DataFrame(results_list)
@@ -69,10 +69,10 @@ def convert_output_to_dataframe(file):
 
 def get_cim_token_label(row, machine=False):
 	if machine:
-		if row['machine_ann'] == 'CAR' or row['lim_machine_ann'] == 'LIM':
+		if row['car_machine_ann'] == 'CAR' or row['lim_machine_ann'] == 'LIM':
 			return 'CIM'
 	else:
-		if row['manual_ann'] == 'CAR' or row['lim_manual_ann'] == 'LIM':
+		if row['car_manual_ann'] == 'CAR' or row['lim_manual_ann'] == 'LIM':
 			return 'CIM'
 	return 'O'
 
