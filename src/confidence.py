@@ -80,7 +80,7 @@ def convert_output_to_dataframe(file):
 	df['machine_ann'] = df['machine_ann'].map(lambda val: get_label(val))
 	return df
 
-def get_label(label):
+def get_label(val):
 	if val != 'O':
 		if val is np.nan:
 			return 'O'
