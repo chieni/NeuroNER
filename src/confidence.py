@@ -42,11 +42,12 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		car_file = '/'.join([car_dir, fol, car_subfolders[0], '000_test.txt'])
 		lim_file = '/'.join([lim_dir, fol, lim_subfolders[0], '000_test.txt'])
 		car_df = convert_output_to_dataframe(car_file)
+		lim_df = convert_output_to_dataframe(lim_file)
 		if car_df.shape[0] == 0:
 			print(fol)
 		if lim_df.shape[0] == 0:
 			print(lim)
-	# 	lim_df = convert_output_to_dataframe(lim_file)
+
 	# 	car_df['car_machine_ann'] = car_df['machine_ann']
 	# 	car_df['car_manual_ann'] = car_df['manual_ann']
 	# 	car_df['lim_machine_ann'] = lim_df['machine_ann']
