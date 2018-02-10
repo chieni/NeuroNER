@@ -29,15 +29,15 @@ def calculate_confidence_interval(label, original_dir, results_outfile, outfile)
 	ci.to_csv(outfile)
 
 def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
-	car_trials = os.listdir(car_dir)[:1000]
-	lim_trials = os.listdir(lim_dir)[:1000]
-	assert car_trials = lim_trials
+	car_trials = os.listdir(car_dir)
+	lim_trials = os.listdir(lim_dir)
+	intersection = set(car_trials).intersect(set(lim_trials))
+	print(len(intersection))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
-	for car, lim in zip(car_trials, lim_trials):
-		assert car == lim
-		car_subfolders = os.listdir(car_dir + '/' + car)
-		lim_subfolders = os.listdir(lim_dir + '/' + lim)
+	for fol in intersection:
+		car_subfolders = os.listdir(car_dir + '/' + fol)
+		lim_subfolders = os.listdir(lim_dir + '/' + fol)
 		# Retrieve file
 		car_file = '/'.join([car_dir, trial, car_subfolders[0], '000_test.txt'])
 		lim_file = '/'.join([lim_dir, trial, lim_subfolders[0], '000_test.txt'])
