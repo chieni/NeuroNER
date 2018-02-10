@@ -31,7 +31,7 @@ def calculate_confidence_interval(label, original_dir, results_outfile, outfile)
 def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 	car_trials = os.listdir(car_dir)
 	lim_trials = os.listdir(lim_dir)
-	intersection = set(car_trials).intersect(set(lim_trials))
+	intersection = set(car_trials).intersection(set(lim_trials))
 	print(len(intersection))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
