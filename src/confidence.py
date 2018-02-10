@@ -74,6 +74,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(file):
 	df = pd.read_csv(file, sep=' ', quoting=csv.QUOTE_NONE, names=["token", "note_name", "start", "end", "manual_ann", "machine_ann"])
+	print(df)
 	df['note_name'] = df['note_name'].map(lambda val: val.split('_')[1])
 	df['manual_ann'] = df['manual_ann'].map(lambda val: val.split('-')[1] if val!= 'O' else val)
 	df['machine_ann'] = df['machine_ann'].map(lambda val: val.split('-')[1] if val!= 'O' else val)
