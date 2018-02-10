@@ -35,6 +35,8 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 	print(len(intersection))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
+	count = 0
+	count2 = 0
 	for fol in intersection:
 		car_subfolders = os.listdir(car_dir + '/' + fol)
 		lim_subfolders = os.listdir(lim_dir + '/' + fol)
@@ -45,9 +47,14 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		lim_df = convert_output_to_dataframe(lim_file)
 		if car_df.shape[0] == 0:
 			print('car', fol)
+			print(car_df.shape)
+			count += 1
 		if lim_df.shape[0] == 0:
 			print('lim', fol)
-
+			print(lim_df.shape)
+			count2 += 1
+	print(count)
+	print(count2)
 	# 	car_df['car_machine_ann'] = car_df['machine_ann']
 	# 	car_df['car_manual_ann'] = car_df['manual_ann']
 	# 	car_df['lim_machine_ann'] = lim_df['machine_ann']
