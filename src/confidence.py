@@ -53,9 +53,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		if lim_df.shape[0] == 0:
 			bad_lim_file.write(fol + '\n')
 			continue
-
-		car_df['car_machine_ann'] = car_df['machine_ann']
-		car_df['car_manual_ann'] = car_df['manual_ann']
+		car_df.rename(index=str, columns={"machine_ann": 'car_machine_ann', 'manual_ann': 'car_manual_ann'})
 		car_df['lim_machine_ann'] = lim_df['machine_ann']
 		car_df['lim_manual_ann'] = lim_df['manual_ann']
 		car_df = car_df.drop(['machine_ann', 'manual_ann'], axis=1)
