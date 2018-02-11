@@ -39,6 +39,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 	bad_car_file = open('bad_car.txt', 'w')
 	bad_lim_file = open('bad_lim.txt', 'w')
 	for fol in intersection:
+		print(fol)
 		car_subfolders = os.listdir(car_dir + '/' + fol)
 		lim_subfolders = os.listdir(lim_dir + '/' + fol)
 		# Retrieve file
@@ -68,7 +69,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		total_count += 1
 		if total_count > 1000:
 			break
-			
+
 	results_df = pd.DataFrame(results_list)
 	results_df = results_df[results_cols]
 	results_df.to_csv(results_outfile)
@@ -78,7 +79,6 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(file):
 	df = pd.read_csv(file, sep=' ', quoting=csv.QUOTE_NONE, names=["token", "note_name", "start", "end", "manual_ann", "machine_ann"])
-	print(df)
 	df['note_name'] = df['note_name'].map(lambda val: get_note_name(val))
 	df['manual_ann'] = df['manual_ann'].map(lambda val: get_label(val))
 	df['machine_ann'] = df['machine_ann'].map(lambda val: get_label(val))
