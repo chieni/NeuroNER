@@ -35,7 +35,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 	print(len(intersection))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
-	count, count2, good_count, good_count2 = 0, 0, 0, 0
+	total_count = 0
 	bad_car_file = open('bad_car.txt', 'w')
 	bad_lim_file = open('bad_lim.txt', 'w')
 	for fol in intersection:
@@ -49,32 +49,31 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		if car_df.shape[0] == 0:
 			count += 1
 			bad_car_file.write(fol + '\n')
-		else:
-			good_count += 1
+			continue
 		if lim_df.shape[0] == 0:
 			count2 += 1
 			bad_lim_file.write(fol + '\n')
-		else:
-			good_count2 += 1
-	print(count)
-	print(count2)
-	print('bad car', bad_car)
-	print('bad lim', bad_lim)
-	# 	car_df['car_machine_ann'] = car_df['machine_ann']
-	# 	car_df['car_manual_ann'] = car_df['manual_ann']
-	# 	car_df['lim_machine_ann'] = lim_df['machine_ann']
-	# 	car_df['lim_manual_ann'] = lim_df['manual_ann']
-	# 	car_df = car_df.drop(['machine_ann', 'manual_ann'], axis=1)
-	# 	car_df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
-	# 	car_df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
-	# 	note_df = get_note_level_labels(car_df, 'CIM')
-	# 	stats = calc_stats(note_df, 'CIM')
-	# 	results_list.append(stats)
-	# results_df = pd.DataFrame(results_list)
-	# results_df = results_df[results_cols]
-	# results_df.to_csv(results_outfile)
-	# ci = results_df.quantile([0.025, 0.975], axis=0)
-	# ci.to_csv(outfile)
+			continue
+
+		car_df['car_machine_ann'] = car_df['machine_ann']
+		car_df['car_manual_ann'] = car_df['manual_ann']
+		car_df['lim_machine_ann'] = lim_df['machine_ann']
+		car_df['lim_manual_ann'] = lim_df['manual_ann']
+		car_df = car_df.drop(['machine_ann', 'manual_ann'], axis=1)
+		car_df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
+		car_df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
+		note_df = get_note_level_labels(car_df, 'CIM')
+		stats = calc_stats(note_df, 'CIM')
+		results_list.append(stats)
+		total_count += 1
+		if total_count > 1000:
+			break
+			
+	results_df = pd.DataFrame(results_list)
+	results_df = results_df[results_cols]
+	results_df.to_csv(results_outfile)
+	ci = results_df.quantile([0.025, 0.975], axis=0)
+	ci.to_csv(outfile)
 
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(file):
