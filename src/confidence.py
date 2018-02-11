@@ -35,8 +35,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 	print(len(intersection))
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
-	count = 0
-	count2 = 0
+	count, count2, good_count, good_count2 = 0, 0, 0, 0
 	bad_car = []
 	bad_lim = []
 	for fol in intersection:
@@ -50,13 +49,17 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		if car_df.shape[0] == 0:
 			count += 1
 			bad_car.append(fol)
+		else:
+			good_count += 1
 		if lim_df.shape[0] == 0:
 			count2 += 1
 			bad_lim.append(fol)
+		else:
+			good_count2 += 1
 	print(count)
 	print(count2)
-	print(bad_car)
-	print(bad_lim)
+	print('bad car', bad_car)
+	print('bad lim', bad_lim)
 	# 	car_df['car_machine_ann'] = car_df['machine_ann']
 	# 	car_df['car_manual_ann'] = car_df['manual_ann']
 	# 	car_df['lim_machine_ann'] = lim_df['machine_ann']
