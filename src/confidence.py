@@ -52,7 +52,7 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 			bad_car.append(fol)
 		if lim_df.shape[0] == 0:
 			count2 += 1
-			bad_lim.append(fold)
+			bad_lim.append(fol)
 	print(count)
 	print(count2)
 	print(bad_car)
