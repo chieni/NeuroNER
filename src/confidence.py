@@ -98,7 +98,6 @@ def get_note_name(val):
 		return parts[1]
 
 def get_cim_token_label(row, machine=False):
-	print(row)
 	if machine:
 		if row['car_machine_ann'] == 'CAR' or row['lim_machine_ann'] == 'LIM':
 			return 'CIM'
