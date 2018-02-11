@@ -36,8 +36,8 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
 	count, count2, good_count, good_count2 = 0, 0, 0, 0
-	bad_car = []
-	bad_lim = []
+	bad_car_file = open('bad_car.txt', 'w')
+	bad_lim_file = open('bad_lim.txt', 'w')
 	for fol in intersection:
 		car_subfolders = os.listdir(car_dir + '/' + fol)
 		lim_subfolders = os.listdir(lim_dir + '/' + fol)
@@ -48,12 +48,12 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		lim_df = convert_output_to_dataframe(lim_file)
 		if car_df.shape[0] == 0:
 			count += 1
-			bad_car.append(fol)
+			bad_car_file.write(fol + '\n')
 		else:
 			good_count += 1
 		if lim_df.shape[0] == 0:
 			count2 += 1
-			bad_lim.append(fol)
+			bad_lim_file.write(fol + '\n')
 		else:
 			good_count2 += 1
 	print(count)
