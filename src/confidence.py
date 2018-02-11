@@ -54,12 +54,8 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 			bad_lim_file.write(fol + '\n')
 			continue
 		car_df = car_df.rename(columns={'machine_ann': 'car_machine_ann', 'manual_ann': 'car_manual_ann'})
-		print(car_df.head())
-		#car_df['car_machine_ann'] = car_df['machine_ann']
-		#car_df['car_manual_ann'] = car_df['manual_ann']
 		car_df['lim_machine_ann'] = lim_df['machine_ann']
 		car_df['lim_manual_ann'] = lim_df['manual_ann']
-		car_df = car_df.drop(['machine_ann', 'manual_ann'], axis=1)
 		car_df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
 		car_df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
 		note_df = get_note_level_labels(car_df, 'CIM')
