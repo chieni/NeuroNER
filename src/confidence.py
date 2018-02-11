@@ -48,11 +48,9 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		car_df = convert_output_to_dataframe(car_file)
 		lim_df = convert_output_to_dataframe(lim_file)
 		if car_df.shape[0] == 0:
-			count += 1
 			bad_car_file.write(fol + '\n')
 			continue
 		if lim_df.shape[0] == 0:
-			count2 += 1
 			bad_lim_file.write(fol + '\n')
 			continue
 
