@@ -90,7 +90,7 @@ def get_label(val):
 		if val is np.nan:
 			return 'O'
 		else:
-			return val.split('-')[0]
+			return val.split('-')[1]
 	return 'O'
 
 def get_note_name(val):
