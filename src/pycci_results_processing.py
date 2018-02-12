@@ -63,6 +63,7 @@ def extract_note_level_labels(input_file, output_file, label):
 
 def calc_stats(input_filename, output_filename, labels):
 	df = pd.read_csv(input_filename, index_col=0, header=0)
+	df = df[~(df['note_name'] == 376976)]
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
 	for label in labels:
@@ -195,11 +196,40 @@ def count_tokens_per_class(labelled_dir, output_dir, labels):
 	results_df = results_df[['label', 'count', 'unique']]
 	results_df.to_csv(output_dir + 'cim_token_counts.csv')
 
+def get_token_count_per_note(token_file):
+	token_df = pd.read_csv(token_file)
+	token_df = token_df[~(token_df['note_name'] == 376976)]
+	print(token_df.shape)
+	notes = token_df['note_name'].unique().tolist()
+	lengths = []
+	for note in notes:
+		note_df = token_df[token_df['note_name'] == note]
+		lengths.append(note_df.shape[0])
+	q75, q25 = np.percentile(lengths, [75 ,25])
+	mean = np.mean(lengths)
+	print(mean)
+	print(q75)
+	print(q25)
+
+def summary_stats(note_file):
+	note_df = pd.read_csv(note_file)
+	note_df = note_df[~(note_df['ROW_ID'] == 376976)]
+	print(note_df['ROW_ID'].unique().shape)
+	print(note_df["SUBJECT_ID"].unique().shape)
+	#print(note_df[note_df['GENDER'] == 'F'].shape)
+
 labels = ['CAR', 'LIM', 'FAM', 'COD', 'CIM_post']
-df = pd.read_csv('../temp/merged_notes/note_train_data.csv')
-print(df.shape)
-df2 = pd.read_csv('../temp/merged_notes/note_valid_data.csv')
-print(df2.shape)
+summary_stats('../temp/over_75/note_labels_over75.csv')
+#get_token_count_per_note('../temp/over_75/deploy_results/CAR_deploy.csv')
+# df = pd.read_csv('../temp/final_train_results/token/CAR_train.csv')
+# print(df.shape)
+
+
+# valid_df = pd.read_csv('../temp/final_valid_results/token/CAR_valid.csv')
+# print(df['token'].unique().shape)
+# print(df.shape)
+# print(valid_df.shape)
+# print(valid_df['token'].unique().shape)
 #merge_to_raw_file('../temp/gold_data/all_notes_122017.csv', '../temp/final_train_results/note/merged_notes.csv', '../temp/final_train_results/note/merged_with_data_notes.csv')
 #merge_note_labels(['../temp/final_train_results/note/CAR_train_processed.csv', '../temp/final_train_results/note/LIM_train_processed.csv', '../temp/final_train_results/note/FAM_train_processed.csv', '../temp/final_train_results/note/COD_train_processed.csv'], '../temp/final_train_results/note/merged_notes.csv')
-#calc_stats('../temp/final_valid_results/note/merged_note_valid.csv', '../temp/final_valid_results/note/note_valid_stats.csv', labels)
+#calc_stats('../temp/final_train_results/note/merged_notes.csv', '../temp/final_train_results/note/note_train_stats.csv', labels)
