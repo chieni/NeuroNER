@@ -47,6 +47,8 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		lim_file = '/'.join([lim_dir, fol, lim_subfolders[0], '000_test.txt'])
 		car_df = convert_output_to_dataframe(car_file)
 		lim_df = convert_output_to_dataframe(lim_file)
+		car_df.to_csv('car_df.csv')
+		lim_df.to_csv('lim_df.csv')
 		if car_df.shape[0] == 0:
 			bad_car_file.write(fol + '\n')
 			continue
