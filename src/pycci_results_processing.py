@@ -214,8 +214,13 @@ def get_token_count_per_note(token_file):
 def summary_stats(note_file):
 	note_df = pd.read_csv(note_file)
 	note_df = note_df[~(note_df['ROW_ID'] == 376976)]
-	print(note_df['ROW_ID'].unique().shape)
-	print(note_df["SUBJECT_ID"].unique().shape)
+	#print(note_df.head())
+	CIM = note_df[note_df['CIM_post:machine'] == 1]
+	#print(note_df['ROW_ID'].unique().shape)
+	CIM = CIM.drop_duplicates(subset='TEXT')
+	CIM = CIM.dropna(axis=0, how='any', subset='CGID')
+	print(CIM["HADM_ID"].unique().shape)
+	print(note_df['HADM_ID'].unique().shape)
 	#print(note_df[note_df['GENDER'] == 'F'].shape)
 
 labels = ['CAR', 'LIM', 'FAM', 'COD', 'CIM_post']

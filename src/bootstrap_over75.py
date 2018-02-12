@@ -11,7 +11,7 @@ import sys
 
 
 def sample_test_data(filenum):
-	output_dir = '../data/over75_bootstrapping'
+	output_dir = '../data/over75_bootstrapping/'
 	if not os.path.exists(output_dir):
 		os.mkdir(output_dir)
 
