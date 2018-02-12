@@ -39,17 +39,14 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 	bad_car_file = open('bad_car.txt', 'w')
 	bad_lim_file = open('bad_lim.txt', 'w')
 	for fol in intersection:
-		print(fol)
+		print(total_count, fol)
 		car_subfolders = os.listdir(car_dir + '/' + fol)
 		lim_subfolders = os.listdir(lim_dir + '/' + fol)
 		# Retrieve file
 		car_file = '/'.join([car_dir, fol, car_subfolders[0], '000_test.txt'])
 		lim_file = '/'.join([lim_dir, fol, lim_subfolders[0], '000_test.txt'])
-		print(car_file)
 		car_df = convert_output_to_dataframe(car_file)
 		lim_df = convert_output_to_dataframe(lim_file)
-		car_df.to_csv('car_df.csv')
-		lim_df.to_csv('lim_df.csv')
 		if car_df.shape[0] == 0:
 			bad_car_file.write(fol + '\n')
 			continue
@@ -64,9 +61,9 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		car_df.to_csv('df_test.csv')
 		note_df = get_note_level_labels(car_df, 'CIM')
 		note_df.to_csv('note_df_test.csv')
-		break
 		stats = calc_stats(note_df, 'CIM')
 		results_list.append(stats)
+
 		total_count += 1
 		if total_count > 1000:
 			break
