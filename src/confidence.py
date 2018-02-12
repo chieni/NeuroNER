@@ -59,6 +59,8 @@ def calculate_cim_ci(lim_dir, car_dir, results_outfile, outfile):
 		car_df['manual_ann'] = car_df.apply(lambda row: get_cim_token_label(row, False), axis=1)
 		car_df['machine_ann'] = car_df.apply(lambda row: get_cim_token_label(row, True), axis=1) 
 		note_df = get_note_level_labels(car_df, 'CIM')
+		print(note_df)
+		break
 		stats = calc_stats(note_df, 'CIM')
 		results_list.append(stats)
 		total_count += 1

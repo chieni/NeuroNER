@@ -39,6 +39,15 @@ def get_cim_label(row, machine=False):
 			return 1
 	return 0
 
+def get_token_label(row, label, machine=False):
+	if machine:
+		if row[label + ":machine"] == label:
+			return 1
+	else:
+		if row[label] == label:
+			return 1
+	return 0
+
 # Get note level labels from the gold standard and machine prediction
 def extract_note_level_labels(input_file, output_file, label):
 	df = pd.read_csv(input_file, header=0, index_col=0, dtype='object')
@@ -126,7 +135,7 @@ def merge_note_labels(note_labels_files, output_file):
 		note_labels_df = pd.read_csv(file, index_col=0, header=0)
 		label = file.split('/')[-1][:3]
 		if notes_df is None:
-			notes_df = note_labels_df[[label, label+':machine']]
+			notes_df = note_labels_df[['note_name', label, label+':machine']]
 		else:
 			notes_df = pd.merge(notes_df, note_labels_df[[label, label+':machine']], how='left', left_index=True, right_index=True)
 
@@ -138,8 +147,27 @@ def merge_note_labels(note_labels_files, output_file):
 def merge_to_raw_file(notes_file, labels_file, out_file):
 	notes_df = pd.read_csv(notes_file, header=0)
 	labels_df = pd.read_csv(labels_file, index_col=0, header=0)
-	out_df = pd.merge(notes_df, labels_df, how='left', left_on='ROW_ID', right_on='note_name') 
+	out_df = pd.merge(notes_df, labels_df, how='inner', left_on='ROW_ID', right_on='note_name') 
+	print(out_df.shape)
 	out_df.to_csv(out_file)
+
+def merge_token_labels(token_labels_files, output_file):
+	token_df = None
+	for file in token_labels_files:
+		print(file)
+		token_labels_df = pd.read_csv(file, index_col=0, header=0)
+		label = file.split('/')[-1][:3]
+		token_labels_df = token_labels_df.rename(columns={'manual_ann': label, 'machine_ann': label + ':machine'})
+		token_labels_df[label] = token_labels_df.apply(lambda row: get_token_label(row, label, False), axis=1)
+		token_labels_df[label + ':machine'] = token_labels_df.apply(lambda row: get_token_label(row, label, True), axis=1)		
+		print(token_labels_df.head())
+		if token_df is None:
+			token_df = token_labels_df[['token', 'note_name', 'start', 'end', label, label+':machine']]
+		else: 
+			token_df = pd.merge(token_df, token_labels_df[[label, label+':machine']], how='left', left_index=True, right_index=True)
+	token_df['CIM_post'] = token_df.apply(lambda row: get_cim_label(row, False), axis=1)
+	token_df['CIM_post:machine'] = token_df.apply(lambda row: get_cim_label(row, True), axis=1)
+	token_df.to_csv(output_file)
 
 # Find predicted token information
 def count_tokens_per_class(labelled_dir, output_dir, labels):
@@ -167,8 +195,11 @@ def count_tokens_per_class(labelled_dir, output_dir, labels):
 	results_df = results_df[['label', 'count', 'unique']]
 	results_df.to_csv(output_dir + 'cim_token_counts.csv')
 
-labels = ['CIM']
-count_tokens_per_class('../temp/over_75/deploy_results/', '../temp/over_75/', labels)
-
-#convert_output_to_dataframe(directory + 'learning_curve/CIM' + str(i) + '_valid.txt', directory + 'learning_curve/CIM' + str(i) + '_valid.csv')
-#process_results_for_stats(directory + 'learning_curve/CIM' + str(i) + '_valid.csv', directory + 'learning_curve/CIM' + str(i) + '_valid_processed.csv', 'CIM')
+labels = ['CAR', 'LIM', 'FAM', 'COD', 'CIM_post']
+df = pd.read_csv('../temp/merged_notes/note_train_data.csv')
+print(df.shape)
+df2 = pd.read_csv('../temp/merged_notes/note_valid_data.csv')
+print(df2.shape)
+#merge_to_raw_file('../temp/gold_data/all_notes_122017.csv', '../temp/final_train_results/note/merged_notes.csv', '../temp/final_train_results/note/merged_with_data_notes.csv')
+#merge_note_labels(['../temp/final_train_results/note/CAR_train_processed.csv', '../temp/final_train_results/note/LIM_train_processed.csv', '../temp/final_train_results/note/FAM_train_processed.csv', '../temp/final_train_results/note/COD_train_processed.csv'], '../temp/final_train_results/note/merged_notes.csv')
+#calc_stats('../temp/final_valid_results/note/merged_note_valid.csv', '../temp/final_valid_results/note/note_valid_stats.csv', labels)
