@@ -216,9 +216,10 @@ def summary_stats(note_file):
 	note_df = note_df[~(note_df['ROW_ID'] == 376976)]
 	#print(note_df.head())
 	CIM = note_df[note_df['CIM_post:machine'] == 1]
+	print(CIM.columns)
 	#print(note_df['ROW_ID'].unique().shape)
-	CIM = CIM.drop_duplicates(subset='TEXT')
-	CIM = CIM.dropna(axis=0, how='any', subset='CGID')
+	CIM = CIM.drop_duplicates(subset=['TEXT', 'HADM_ID'])
+	CIM = CIM.dropna(subset=['CGID'])
 	print(CIM["HADM_ID"].unique().shape)
 	print(note_df['HADM_ID'].unique().shape)
 	#print(note_df[note_df['GENDER'] == 'F'].shape)
