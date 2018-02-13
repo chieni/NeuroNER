@@ -7,6 +7,8 @@ import numpy as np
 import csv
 import ast
 from sklearn.metrics import cohen_kappa_score, confusion_matrix, precision_recall_fscore_support, classification_report
+from pycci_preprocessing import clean_df
+
 
 # Converts a NeuroNER output to a Pandas DataFrame
 def convert_output_to_dataframe(filename, output_filename):
@@ -211,21 +213,35 @@ def get_token_count_per_note(token_file):
 	print(q75)
 	print(q25)
 
-def summary_stats(note_file):
+def summary_stats(original_file, note_file, quality_file):
+	#original_df = pd.read_csv(original_file)
+	#original_df = original_df.drop_duplicates(subset=['TEXT', 'HADM_ID'])
+	#original_df = clean_df(original_df, ['TEXT'])
+	#original_df = original_df.drop_duplicates(subset=['TEXT'])
+	#print(original_df.shape)
+
 	note_df = pd.read_csv(note_file)
-	note_df = note_df[~(note_df['ROW_ID'] == 376976)]
-	#print(note_df.head())
-	CIM = note_df[note_df['CIM_post:machine'] == 1]
-	print(CIM.columns)
-	#print(note_df['ROW_ID'].unique().shape)
-	CIM = CIM.drop_duplicates(subset=['TEXT', 'HADM_ID'])
-	CIM = CIM.dropna(subset=['CGID'])
+	note_df = note_df.drop_duplicates(subset=['TEXT', 'HADM_ID'])
+	note_df.dropna(subset=['CGID'])
+	print('deduped', note_df.shape)
+	note_df = clean_df(note_df, ['TEXT'])
+	note_df = note_df.drop_duplicates(subset=['TEXT'])
+	print('deduped with clean text', note_df.shape)
+
+	quality_df = pd.read_csv(quality_file)
+	print('quality', quality_df.shape)
+
+	note_ids = set(note_df['ROW_ID'])
+	quality_ids = set(quality_df['ROW_ID'])
+	#print(note_ids - quality_ids)
+
+	CIM = note_df[note_df['CIM_post:machine'] == 1]	
 	print(CIM["HADM_ID"].unique().shape)
 	print(note_df['HADM_ID'].unique().shape)
 	#print(note_df[note_df['GENDER'] == 'F'].shape)
 
 labels = ['CAR', 'LIM', 'FAM', 'COD', 'CIM_post']
-summary_stats('../temp/over_75/note_labels_over75.csv')
+summary_stats('../temp/over_75/over_75_cohort_17Jan18.csv','../temp/over_75/note_labels_over75.csv', '../temp/over_75/quality.csv')
 #get_token_count_per_note('../temp/over_75/deploy_results/CAR_deploy.csv')
 # df = pd.read_csv('../temp/final_train_results/token/CAR_train.csv')
 # print(df.shape)
