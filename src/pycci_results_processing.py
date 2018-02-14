@@ -65,7 +65,7 @@ def extract_note_level_labels(input_file, output_file, label):
 
 def calc_stats(input_filename, output_filename, labels):
 	df = pd.read_csv(input_filename, index_col=0, header=0)
-	df = df[~(df['note_name'] == 376976)]
+	#df = df[~(df['note_name'] == 376976)]
 	results_cols = ['label', 'p', 'n', 'tp', 'tn', 'fp', 'fn', 'accuracy', 'precision', 'recall', 'specificity', 'f1']
 	results_list = []
 	for label in labels:
@@ -200,7 +200,7 @@ def count_tokens_per_class(labelled_dir, output_dir, labels):
 
 def get_token_count_per_note(token_file):
 	token_df = pd.read_csv(token_file)
-	token_df = token_df[~(token_df['note_name'] == 376976)]
+	#token_df = token_df[~(token_df['note_name'] == 376976)]
 	print(token_df.shape)
 	notes = token_df['note_name'].unique().tolist()
 	lengths = []
@@ -235,60 +235,55 @@ def over75_stats(original_file, note_file, quality_file):
 	quality_ids = set(quality_df['ROW_ID'])
 	#print(note_ids - quality_ids)
 	#print(note_df['HADM_ID'].unique().shape)
-
-	CIM = note_df[note_df['CIM_post:machine'] == 1]	
-	#print(CIM["HADM_ID"].unique().shape)
 	
-	merge_df = pd.merge(quality_df, note_df, how='inner', left_on='ROW_ID', right_on='ROW_ID')
-	#merge_df = pd.merge(original_df, note_df, how='inner', left_on='ROW_ID', right_on='ROW_ID')
+	#merge_df = pd.merge(quality_df, note_df, how='inner', left_on='ROW_ID', right_on='ROW_ID')
+	merge_df = pd.merge(original_df, note_df, how='inner', left_on='ROW_ID', right_on='ROW_ID')
 	assert merge_df['HADM_ID_x'].equals(merge_df['HADM_ID_y'])
-	print("total admissions", merge_df['HADM_ID_x'].unique().shape)
-	print('subjects', merge_df['SUBJECT_ID_x'].unique().shape)
-	adm_df = merge_df.drop_duplicates(subset=['HADM_ID_x'])
+	print(merge_df.columns)
+	print("total unique admissions", merge_df['HADM_ID_x'].unique().shape)
+	print('total unique subjects', merge_df['SUBJECT_ID_x'].unique().shape)
+
 	# All patients that have CIM
 	CIM_quality = merge_df[merge_df['CIM_post:machine'] == 1]
 	CIM_quality = CIM_quality.drop_duplicates(subset=['HADM_ID_x'])
+	print(CIM_quality.shape)
 
-	print('total admissions', adm_df.shape)
-	print('GENDER\n')
-	print(adm_df['GENDER'].value_counts())
-	print('MARITAL_STATUS\n')
-	print(adm_df['MARITAL_STATUS'].value_counts())
-	print('ETHNICITY\n')
-	print(adm_df['ETHNICITY'].value_counts())
-	print('FIRST_CAREUNIT\n')
-	print(adm_df['FIRST_CAREUNIT'].value_counts())
+	CAR_quality = merge_df[merge_df['CAR:machine'] == 1]
+	CAR_quality = CAR_quality.drop_duplicates(subset=['HADM_ID_x'])
+	print(CAR_quality.shape)
+
+	LIM_quality = merge_df[merge_df['LIM:machine'] == 1]
+	LIM_quality = LIM_quality.drop_duplicates(subset=['HADM_ID_x'])
+	print(LIM_quality.shape)
+
+	FAM_quality =  merge_df[merge_df['FAM:machine'] == 1]
+	FAM_quality = FAM_quality.drop_duplicates(subset=['HADM_ID_x'])
+	print(FAM_quality.shape)
+
+	# print('total admissions', adm_df.shape)
+	# print('GENDER\n')
+	# print(adm_df['GENDER'].value_counts())
+	# print('MARITAL_STATUS\n')
+	# print(adm_df['MARITAL_STATUS'].value_counts())
+	# print('ETHNICITY\n')
+	# print(adm_df['ETHNICITY'].value_counts())
+	# print('FIRST_CAREUNIT\n')
+	# print(adm_df['FIRST_CAREUNIT'].value_counts())
 
 
-	print("patients with CIM", CIM_quality.shape)
-	print('GENDER\n')
-	print(CIM_quality['GENDER'].value_counts())
-	print('MARITAL_STATUS\n')
-	print(CIM_quality['MARITAL_STATUS'].value_counts())
-	print('ETHNICITY\n')
-	print(CIM_quality['ETHNICITY'].value_counts())
-	print('FIRST_CAREUNIT\n')
-	print(CIM_quality['FIRST_CAREUNIT'].value_counts())
+	# print("patients with CIM", CIM_quality.shape)
+	# print('GENDER\n')
+	# print(CIM_quality['GENDER'].value_counts())
+	# print('MARITAL_STATUS\n')
+	# print(CIM_quality['MARITAL_STATUS'].value_counts())
+	# print('ETHNICITY\n')
+	# print(CIM_quality['ETHNICITY'].value_counts())
+	# print('FIRST_CAREUNIT\n')
+	# print(CIM_quality['FIRST_CAREUNIT'].value_counts())
 
 
 labels = ['CAR', 'LIM', 'FAM', 'COD', 'CIM_post']
 #over75_stats('../temp/over_75/over_75_cohort_20Jan18.csv','../temp/over_75/note_labels_over75.csv', '../temp/over_75/quality.csv')
-# get_token_count_per_note('../temp/over_75/deploy_results/CAR_deploy.csv')
-# df = pd.read_csv('../temp/final_train_results/token/CAR_train.csv')
-# print(df.shape)
+#get_token_count_per_note('../temp/over_75/deploy_results/CAR_deploy.csv')
 
-df = pd.read_csv('../temp/merged_notes/note_valid_data.csv')
-rows = set(df['ROW_ID'].tolist())
-print(df.shape)
-files = os.listdir('../temp/010918/010918_CAR/valid')
-files = set([int(file[5:-4]) for file in files if file[-3:] != 'ann'])
-print(files)
-print(len(files.intersection(rows)))
-# valid_df = pd.read_csv('../temp/final_valid_results/token/CAR_valid.csv')
-# print(df['token'].unique().shape)
-# print(df.shape)
-# print(valid_df.shape)
-# print(valid_df['token'].unique().shape)
-#merge_to_raw_file('../temp/gold_data/all_notes_122017.csv', '../temp/final_train_results/note/merged_notes.csv', '../temp/final_train_results/note/merged_with_data_notes.csv')
-#merge_note_labels(['../temp/final_train_results/note/CAR_train_processed.csv', '../temp/final_train_results/note/LIM_train_processed.csv', '../temp/final_train_results/note/FAM_train_processed.csv', '../temp/final_train_results/note/COD_train_processed.csv'], '../temp/final_train_results/note/merged_notes.csv')
-#calc_stats('../temp/final_train_results/note/merged_notes.csv', '../temp/final_train_results/note/note_train_stats.csv', labels)
+calc_stats('../temp/final_train_results/note/merged_notes.csv', '../temp/final_train_results/note/note_train_stats.csv', labels)
