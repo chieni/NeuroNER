@@ -8,6 +8,7 @@ import csv
 import ast
 from sklearn.metrics import cohen_kappa_score, confusion_matrix, precision_recall_fscore_support, classification_report
 from pycci_preprocessing import clean_df
+from dateutil import parser
 
 
 # Converts a NeuroNER output to a Pandas DataFrame
@@ -213,77 +214,23 @@ def get_token_count_per_note(token_file):
 	print(q75)
 	print(q25)
 
-def over75_stats(original_file, note_file, quality_file):
-	original_df = pd.read_csv(original_file)
-	original_df = original_df.drop_duplicates(subset=['TEXT', 'HADM_ID'])
-	#original_df = clean_df(original_df, ['TEXT'])
-	#original_df = original_df.drop_duplicates(subset=['TEXT'])
-	print(original_df.shape)
-
-	note_df = pd.read_csv(note_file)
-	note_df = note_df.drop_duplicates(subset=['TEXT', 'HADM_ID'])
-	note_df.dropna(subset=['CGID'])
-	#print('deduped', note_df.shape)
-	# note_df = clean_df(note_df, ['TEXT'])
-	# note_df = note_df.drop_duplicates(subset=['TEXT'])
-	# print('deduped with clean text', note_df.shape)
-
-	quality_df = pd.read_csv(quality_file)
-	#print('quality', quality_df.shape)
-
-	note_ids = set(note_df['ROW_ID'])
-	quality_ids = set(quality_df['ROW_ID'])
-	#print(note_ids - quality_ids)
-	#print(note_df['HADM_ID'].unique().shape)
-	
-	#merge_df = pd.merge(quality_df, note_df, how='inner', left_on='ROW_ID', right_on='ROW_ID')
-	merge_df = pd.merge(original_df, note_df, how='inner', left_on='ROW_ID', right_on='ROW_ID')
-	assert merge_df['HADM_ID_x'].equals(merge_df['HADM_ID_y'])
-	print(merge_df.columns)
-	print("total unique admissions", merge_df['HADM_ID_x'].unique().shape)
-	print('total unique subjects', merge_df['SUBJECT_ID_x'].unique().shape)
-
-	# All patients that have CIM
-	CIM_quality = merge_df[merge_df['CIM_post:machine'] == 1]
-	CIM_quality = CIM_quality.drop_duplicates(subset=['HADM_ID_x'])
-	print(CIM_quality.shape)
-
-	CAR_quality = merge_df[merge_df['CAR:machine'] == 1]
-	CAR_quality = CAR_quality.drop_duplicates(subset=['HADM_ID_x'])
-	print(CAR_quality.shape)
-
-	LIM_quality = merge_df[merge_df['LIM:machine'] == 1]
-	LIM_quality = LIM_quality.drop_duplicates(subset=['HADM_ID_x'])
-	print(LIM_quality.shape)
-
-	FAM_quality =  merge_df[merge_df['FAM:machine'] == 1]
-	FAM_quality = FAM_quality.drop_duplicates(subset=['HADM_ID_x'])
-	print(FAM_quality.shape)
-
-	# print('total admissions', adm_df.shape)
-	# print('GENDER\n')
-	# print(adm_df['GENDER'].value_counts())
-	# print('MARITAL_STATUS\n')
-	# print(adm_df['MARITAL_STATUS'].value_counts())
-	# print('ETHNICITY\n')
-	# print(adm_df['ETHNICITY'].value_counts())
-	# print('FIRST_CAREUNIT\n')
-	# print(adm_df['FIRST_CAREUNIT'].value_counts())
-
-
-	# print("patients with CIM", CIM_quality.shape)
-	# print('GENDER\n')
-	# print(CIM_quality['GENDER'].value_counts())
-	# print('MARITAL_STATUS\n')
-	# print(CIM_quality['MARITAL_STATUS'].value_counts())
-	# print('ETHNICITY\n')
-	# print(CIM_quality['ETHNICITY'].value_counts())
-	# print('FIRST_CAREUNIT\n')
-	# print(CIM_quality['FIRST_CAREUNIT'].value_counts())
+def time_test():
+	with open('../temp/lim_time_test.txt') as f:
+		times = []
+		for line in f:
+			parts = line.strip().split('\t')
+			start = parser.parse(parts[0])
+			end = parser.parse(parts[1])
+			times.append(end-start)
+		print(len(times))
+		minutes = [t.seconds/60 for t in sorted(times)]
+		print(np.mean(minutes))
+		print(np.median(minutes))
+		print(minutes)
+	with open('../temp/lim_runtime_sorted.txt', 'w') as g:
+		for mi in minutes:
+			g.write(str(mi) + '\n')
 
 
 labels = ['CAR', 'LIM', 'FAM', 'COD', 'CIM_post']
-#over75_stats('../temp/over_75/over_75_cohort_20Jan18.csv','../temp/over_75/note_labels_over75.csv', '../temp/over_75/quality.csv')
-#get_token_count_per_note('../temp/over_75/deploy_results/CAR_deploy.csv')
 
-calc_stats('../temp/final_train_results/note/merged_notes.csv', '../temp/final_train_results/note/note_train_stats.csv', labels)
