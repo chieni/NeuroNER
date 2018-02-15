@@ -61,9 +61,15 @@ def calc_stats(pos_df):
 	gender_df = pos_df['GENDER'].value_counts()
 	results['female'], results['male'] = gender_df.loc['F'], gender_df.loc['M']
 	marital_df = pos_df['MARITAL_STATUS'].value_counts()
-	results['single'], results['married'], results['divorced'], results['widowed'] = marital_df.loc['SINGLE'], marital_df.loc['MARRIED'], marital_df.loc['DIVORCED'], marital_df.loc['WIDOWED']
+	marital_statuses = ['single', 'married', 'divorced', 'widowed']
+	for mar in marital_statuses:
+		if mar.upper() in marital_df:
+			results[mar] = marital_df.loc[mar.upper()]
 	icu_df = pos_df['FIRST_CAREUNIT'].value_counts()
-	results['ccu'], results['csru'], results['micu'], results['sicu'], results['tsicu'] = icu_df['CCU'], icu_df['CSRU'], icu_df['MICU'], icu_df['SICU'], icu_df['TSICU']
+	icus = ['ccu', 'csru', 'micu', 'sicu', 'tsicu']
+	for icu in icus:
+		if icu.upper() in icu_df:
+			results[icu] = icu_df.loc[icu.upper()]
 	total_eth = pos_df['ETHNICITY'].shape[0]
 	race_df = pos_df['ETHNICITY'].value_counts()
 	white_races = ['WHITE', 'WHITE - RUSSIAN', 'WHITE - OTHER EUROPEAN']
