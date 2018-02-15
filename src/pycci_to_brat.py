@@ -48,7 +48,6 @@ def find_all_substrings(string, substring):
 			return output
 		output.append(last_found)
 
-
 def _create_entities(existing_ents, tokens, labelname, start_pos, operator, original_filename):
 	entities = []
 	for token in tokens:
@@ -104,6 +103,7 @@ def _make_default_token_dict(annotators):
 		entity_dict[ann+'_2'] = None
 	return entity_dict
 
+# Converts MIMIC format table to tokenized dataframe
 def convert_to_df_format(annotations_file, labels, out_file, text_columns, has_annotations=True):
 	spacy_nlp = spacy.load('en') 
 	ann_df = clean_df(pd.read_csv(annotations_file, header=0), text_columns)
@@ -165,80 +165,6 @@ def convert_to_df_format(annotations_file, labels, out_file, text_columns, has_a
 	else:
 		all_df = all_df[['token', 'note_name', 'start', 'end']]
 	all_df.to_csv(out_file)
-
-def get_notes_by_annotator(annotations_df, annotators):
-	results_dict = {}
-	for annotator in annotators:
-		op_df = annotations_df[annotations_df['operator'] == annotator]
-		row_ids = list(map(int, op_df['ROW_ID'].unique()))
-		results_dict[annotator] = row_ids
-	return results_dict
-
-def merge_additions_reviewed(token_file, additions_file, output_file):
-	# Add column
-	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
-	addition_df = pd.read_csv(additions_file, dtype='object', header=0, index_col=0)
-	new_df = pd.merge(token_df, addition_df,  how='left', left_on=['note_name','start'], right_on = ['note_name','start'], left_index=False, right_index=False)
-	new_df = new_df.astype('object')
-	new_df.to_csv(output_file)
-
-def convert_nan_token(token):
-	if token is np.nan:
-		return 'O'
-	return token
-
-def get_gold_label(row):
-	if row['reviewer'] == 'O' and row['reviewer_added'] == 'O':
-		return 'O'
-	elif row['reviewer_added'] != 'O':
-		return row['reviewer_added']
-	elif row['reviewer'] != 'O':
-		return row['reviewer']
-	else:
-		return row['reviewer']
-
-def _get_annotator_headers(annotators):
-	header = annotators[:]
-	for ann in annotators:
-		header.append(ann + '_2')
-	return header
-
-def finalize_review_tokens(token_file, annotators, output_file):
-	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
-	token_df['reviewer'] = token_df['reviewer'].map(lambda x: convert_nan_token(x))
-	token_df['reviewer_added'] = token_df['reviewer_added'].map(lambda x: convert_nan_token(x))
-	
-	# Look at a 'reviewer' and 'reviewer_added'
-	token_df['gold'] = token_df.apply(lambda row: get_gold_label(row), axis=1)
-	headers = ['token_x', 'note_name', 'start', 'end_x'] + _get_annotator_headers(annotators) + ['reviewer', 'reviewer_added', 'gold']
-	token_df = token_df[headers]
-	token_df.astype('object')
-	token_df.to_csv(output_file)
-
-def get_single_token_label(row, label):
-	if row['gold'] == 'O':
-		return 'O'
-	else:
-		label_list = ast.literal_eval(row['gold'])
-		if label in label_list:
-			return label
-		return 'O'
-
-def get_cim_label(row, label):
-	if row['gold'] == 'O':
-		return 'O'
-	else:
-		label_list = ast.literal_eval(row['gold'])
-		if 'CAR' in label_list or 'LIM' in label_list:
-			return 'CIM'
-		return 'O'
-
-def split_df_by_class(token_file, token_class_file):
-	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
-	for label in labels:
-		token_df[label] = token_df.apply(lambda row: get_single_token_label(row, label), axis=1)
-	token_df['CIM'] = token_df.apply(lambda row: get_cim_label(row, label), axis=1)
-	token_df.to_csv(token_class_file)
 
 def dataframe_to_brat(notes_file, token_class_file, output_filepath, labels):
 	token_df = pd.read_csv(token_class_file, header=0, index_col=0)
@@ -324,6 +250,80 @@ def split_data_sets(input_filepath, out_filepath, labels, training_ratio=0.5):
 
 			ann_content = open(input_filepath + label + "/" + note_name + '.ann', 'r').readlines()
 			anno_file = open(valid_filepath + note_name + '.ann', 'w').writelines([l for l in ann_content])
+
+def get_notes_by_annotator(annotations_df, annotators):
+	results_dict = {}
+	for annotator in annotators:
+		op_df = annotations_df[annotations_df['operator'] == annotator]
+		row_ids = list(map(int, op_df['ROW_ID'].unique()))
+		results_dict[annotator] = row_ids
+	return results_dict
+
+def merge_additions_reviewed(token_file, additions_file, output_file):
+	# Add column
+	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
+	addition_df = pd.read_csv(additions_file, dtype='object', header=0, index_col=0)
+	new_df = pd.merge(token_df, addition_df,  how='left', left_on=['note_name','start'], right_on = ['note_name','start'], left_index=False, right_index=False)
+	new_df = new_df.astype('object')
+	new_df.to_csv(output_file)
+
+def convert_nan_token(token):
+	if token is np.nan:
+		return 'O'
+	return token
+
+def get_gold_label(row):
+	if row['reviewer'] == 'O' and row['reviewer_added'] == 'O':
+		return 'O'
+	elif row['reviewer_added'] != 'O':
+		return row['reviewer_added']
+	elif row['reviewer'] != 'O':
+		return row['reviewer']
+	else:
+		return row['reviewer']
+
+def _get_annotator_headers(annotators):
+	header = annotators[:]
+	for ann in annotators:
+		header.append(ann + '_2')
+	return header
+
+def finalize_review_tokens(token_file, annotators, output_file):
+	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
+	token_df['reviewer'] = token_df['reviewer'].map(lambda x: convert_nan_token(x))
+	token_df['reviewer_added'] = token_df['reviewer_added'].map(lambda x: convert_nan_token(x))
+	
+	# Look at a 'reviewer' and 'reviewer_added'
+	token_df['gold'] = token_df.apply(lambda row: get_gold_label(row), axis=1)
+	headers = ['token_x', 'note_name', 'start', 'end_x'] + _get_annotator_headers(annotators) + ['reviewer', 'reviewer_added', 'gold']
+	token_df = token_df[headers]
+	token_df.astype('object')
+	token_df.to_csv(output_file)
+
+def get_single_token_label(row, label):
+	if row['gold'] == 'O':
+		return 'O'
+	else:
+		label_list = ast.literal_eval(row['gold'])
+		if label in label_list:
+			return label
+		return 'O'
+
+def get_cim_label(row, label):
+	if row['gold'] == 'O':
+		return 'O'
+	else:
+		label_list = ast.literal_eval(row['gold'])
+		if 'CAR' in label_list or 'LIM' in label_list:
+			return 'CIM'
+		return 'O'
+
+def split_df_by_class(token_file, token_class_file):
+	token_df = pd.read_csv(token_file, dtype='object', header=0, index_col=0)
+	for label in labels:
+		token_df[label] = token_df.apply(lambda row: get_single_token_label(row, label), axis=1)
+	token_df['CIM'] = token_df.apply(lambda row: get_cim_label(row, label), axis=1)
+	token_df.to_csv(token_class_file)
 
 def split_data_sets_for_learning_curve(input_filepath, out_filepath, labels, valid_ratio=0.2):
 	if not os.path.exists(out_filepath):
@@ -415,12 +415,3 @@ text_columns = ["TEXT", "Patient and Family Care Preferences Text",
 
 directory = '/Users/IsabelChien/Dropbox (MIT)/neuroner/'
 annotators = ['Saad', 'Sarah', 'Harry', 'Dickson']
-#finalize_review_tokens('../temp/010918/raw_data/merged_010918.csv', annotators, '../temp/011918/final_merged_011918.csv')
-
-#dataframe_to_brat('../temp/gold_data/all_notes_122017.csv', '../temp/gold_data/final_by_class_011718.csv', '../temp/011918/learning_curve/', labels)
-#unannotated_dataframe_to_brat('../temp/011918/over_75_cohort_17Jan18.csv', '../temp/011918/over_75/')
-#split_data_sets_for_learning_curve('../temp/011918/full_brat/', '../temp/011918/learning_curve/', labels)
-#split_data_sets_for_learning_curve('../data/full_brat/', '../data/learning_curve/', labels)
-
-split_data_sets('../temp/full_brat/', '../temp/020318/', labels)
-#get_note_level_labels('../temp/gold_data/final_merged_011918.csv', '../temp/gold_data/note_labels_011918.csv')

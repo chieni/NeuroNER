@@ -37,15 +37,14 @@ def calculate_confidence_interval(labels, post_labels, original_file, output_dir
 		trial_stats_dict = all_stats(post_labels, merge_df)
 		for l, stats_dict in trial_stats_dict.items():
 			final_results_dict[l].append(stats_dict)
-
+	final_dfs = []
 	for key, results_list in final_results_dict.items():
-		results_df = pd.DataFrame(results_list)
-		print(results_df)
-		results_df = results_df[results_cols]
-		results_df.to_csv(results_outdir + key[:3] + '.csv')
-		ci = results_df.quantile([0.025, 0.975], axis=0)
-		ci.to_csv(results_outdir + key[:3] + '_ci.csv')
-
+			results_df = pd.DataFrame(results_list)
+			results_df = results_df[results_cols]
+			final_dfs.append(results_df)
+	final_table = pd.concat(final_dfs)
+	final_table.to_csv(results_outdir + 'results.csv')
+		
 def all_stats(post_labels, merge_df):
 	all_results_dict = {}
 	total_results = calc_stats(merge_df.drop_duplicates(subset=['HADM_ID']))
@@ -117,5 +116,7 @@ def merge_note_labels(note_labels_dfs, labels):
 	notes_df['CIM_post:machine'] = notes_df.apply(lambda row: get_cim_label(row, True), axis=1)
 	notes_df['note_name'] = notes_df['note_name'].apply(pd.to_numeric)
 	return notes_df
-calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../data/over_75_cohort_20Jan18.csv', '../output/over75_bootstrapping', '../output/over75_ci/')
-#calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../temp/over_75/over_75_cohort_20Jan18.csv', '../temp/over75_bootstrapping', '../temp/over75_ci/')
+
+
+#calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../data/over_75_cohort_20Jan18.csv', '../output/over75_bootstrapping', '../output/over75_ci/')
+calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../temp/over_75/over_75_cohort_20Jan18.csv', '../temp/over75_bootstrapping', '../temp/over75_ci/')
