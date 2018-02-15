@@ -103,5 +103,5 @@ def merge_note_labels(note_labels_dfs, labels):
 	notes_df['CIM_post:machine'] = notes_df.apply(lambda row: get_cim_label(row, True), axis=1)
 	notes_df['note_name'] = notes_df['note_name'].apply(pd.to_numeric)
 	return notes_df
-
-calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../temp/over_75/over_75_cohort_20Jan18.csv', '../temp/over75_bootstrapping', '../temp/over75_ci/')
+calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../data/over_75_cohort_20Jan18.csv', '../output/over75_bootstrapping', '../output/over75_ci/')
+#calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../temp/over_75/over_75_cohort_20Jan18.csv', '../temp/over75_bootstrapping', '../temp/over75_ci/')
