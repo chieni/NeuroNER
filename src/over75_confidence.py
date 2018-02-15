@@ -13,7 +13,7 @@ def calculate_confidence_interval(labels, post_labels, original_file, output_dir
 	trials = os.listdir(output_dir + '/' + labels[0])
 	print(len(trials))
 	results_cols = ['overall', 'female', 'male', 'single', 'married', 'divorced', 'widowed', 'ccu', 'csru', 'micu', 'sicu', 'tsicu', 'white', 'black', 'other', 'less', 'more']
-	final_results_dict = {key: [] for key in post_labels}
+	final_results_dict = {key: [] for key in post_labels + ['all']}
 
 	overall_dict = calc_stats(original_df.drop_duplicates(subset=['HADM_ID']))
 	overall_df = pd.DataFrame([overall_dict])
@@ -45,9 +45,9 @@ def calculate_confidence_interval(labels, post_labels, original_file, output_dir
 		ci.to_csv(results_outdir + key[:3] + '_ci.csv')
 
 def all_stats(post_labels, merge_df):
-	print("total unique admissions", merge_df['HADM_ID'].unique().shape[0])
-	# Patient demographics
 	all_results_dict = {}
+	total_results = calc_stats(merge_df.drop_duplicates(subset=['HADM_ID']))
+	all_results_dict['all'] = total_results
 	for label in post_labels:
 		pos_df = merge_df[merge_df[label] == 1]
 		pos_df = pos_df.drop_duplicates(subset=['HADM_ID'])
@@ -104,4 +104,4 @@ def merge_note_labels(note_labels_dfs, labels):
 	notes_df['note_name'] = notes_df['note_name'].apply(pd.to_numeric)
 	return notes_df
 
-calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../data/over_75_cohort_20Jan18.csv', '../output/over75_bootstrapping', '../output/over75_ci/')
+calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../temp/over_75/over_75_cohort_20Jan18.csv', '../temp/over75_bootstrapping', '../temp/over75_ci/')
