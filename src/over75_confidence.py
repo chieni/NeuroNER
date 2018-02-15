@@ -16,7 +16,7 @@ def calculate_confidence_interval(labels, post_labels, original_file, output_dir
 	final_results_dict = {key: [] for key in post_labels}
 
 	overall_dict = calc_stats(original_df.drop_duplicates(subset=['HADM_ID']))
-	overall_df = pd.DataFrame(overall_dict)
+	overall_df = pd.DataFrame([overall_dict])
 	overall_df.to_csv(results_outdir + 'overall.csv')
 
 	for trial in trials:
