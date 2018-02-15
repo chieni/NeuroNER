@@ -124,8 +124,9 @@ annotation_headers = [u'ROW_ID', u'HADM_ID', u'CATEGORY',
 # - Concatenate all notes for all annotated results - concat_all_notes
 # - Clean all text fields
 # - Make sure all ROW_IDs are correct - assert_note_and_annotations_match
+
 # pycci_to_brat.py
-# - Convert annotations to BRAT format - convert_to_brat, split_data_sets
+# - Convert annotations to BRAT format -convert_to_df_format, dataframe_to_brat, split_data_sets
 # - Move data to server to run NeuroNER
 # - Run annotations through NeuroNER 
 # - Convert CONLL results format into dataframes suitable for PyCCI viewing.
