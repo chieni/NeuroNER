@@ -37,8 +37,10 @@ def calculate_confidence_interval(labels, post_labels, original_file, output_dir
 		trial_stats_dict = all_stats(post_labels, merge_df)
 		for l, stats_dict in trial_stats_dict.items():
 			final_results_dict[l].append(stats_dict)
+
 	for key, results_list in final_results_dict.items():
 		results_df = pd.DataFrame(results_list)
+		print(results_df)
 		results_df = results_df[results_cols]
 		results_df.to_csv(results_outdir + key[:3] + '.csv')
 		ci = results_df.quantile([0.025, 0.975], axis=0)
@@ -59,7 +61,12 @@ def calc_stats(pos_df):
 	results = {}
 	results['overall'] = pos_df.shape[0]
 	gender_df = pos_df['GENDER'].value_counts()
-	results['female'], results['male'] = gender_df.loc['F'], gender_df.loc['M']
+	print(gender_df)
+	genders = ['female', 'male']
+	for g in genders:
+		if g[0].upper() in gender_df:
+			results[g] = gender_df.loc[g[0].upper()]
+
 	marital_df = pos_df['MARITAL_STATUS'].value_counts()
 	marital_statuses = ['single', 'married', 'divorced', 'widowed']
 	for mar in marital_statuses:
@@ -93,6 +100,7 @@ def calc_stats(pos_df):
 	results['black'] = black
 	results['other'] = other
 	survival_df = pd.cut(pos_df['DAYS_UNTIL_DEATH'], bins=[0,7,float('inf')]).value_counts()
+
 	results['less'] = survival_df.loc[pd.Interval(left=0, right=7, closed='right')]
 	results['more'] = survival_df.loc[pd.Interval(left=7, right=float('inf'), closed='right')]
 	return results
@@ -109,5 +117,5 @@ def merge_note_labels(note_labels_dfs, labels):
 	notes_df['CIM_post:machine'] = notes_df.apply(lambda row: get_cim_label(row, True), axis=1)
 	notes_df['note_name'] = notes_df['note_name'].apply(pd.to_numeric)
 	return notes_df
-calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../data/over_75_cohort_20Jan18.csv', '../output/over75_bootstrapping', '../output/over75_ci/')
-#calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../temp/over_75/over_75_cohort_20Jan18.csv', '../temp/over75_bootstrapping', '../temp/over75_ci/')
+# calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../data/over_75_cohort_20Jan18.csv', '../output/over75_bootstrapping', '../output/over75_ci/')
+calculate_confidence_interval(['CAR', 'LIM', 'FAM'], ['CIM_post:machine', 'CAR:machine', 'LIM:machine', 'FAM:machine'], '../temp/over_75/over_75_cohort_20Jan18.csv', '../temp/over75_bootstrapping', '../temp/over75_ci/')
